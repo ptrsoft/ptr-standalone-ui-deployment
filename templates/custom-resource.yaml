@@ -12,11 +12,6 @@ Parameters:
   AppkubeService:
     Type: String
 Resources:
-  CopyCustomResource:
-    Type: "AWS::CloudFormation::CustomResource"
-    Properties:
-      ServiceToken: !GetAtt CopyFunction.Arn
-
   S3BucketLogs:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
