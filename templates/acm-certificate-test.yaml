@@ -1,0 +1,91 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: ACFS3 - S3 Static site with CF and ACM (uksb-1qnk6ni7b) (version:v0.5)
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Domain
+        Parameters:
+          - SubDomain
+          - DomainName
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: ServiceMetaData
+        Parameters:
+          - AppkubeDepartment
+          - AppkubeProduct
+          - AppkubeEnvironment
+          - AppkubeService
+
+Mappings:
+  Solution:
+    Constants:
+      Version: 'v0.9'
+
+Rules:
+  OnlyUsEast1:
+    Assertions:
+      - Assert:
+          Fn::Equals:
+            - !Ref AWS::Region
+            - us-east-1
+        AssertDescription: |
+          This template can only be deployed in the us-east-1 region.
+          This is because the ACM Certificate must be created in us-east-1
+
+Parameters:
+  SubDomain:
+    Description: The part of a website address before your DomainName - e.g. www or img
+    Type: String
+    Default: www
+    AllowedPattern: ^[^.]*$
+  DomainName:
+    Description: The part of a website address after your SubDomain - e.g. example.com
+    Type: String
+  HostedZoneId:
+    Description: HostedZoneId for the domain e.g. Z23ABC4XYZL05B
+    Type: String
+  CreateApex:
+    Description: Create an Apex Alias in CloudFront distribution - yes/no
+    Type: String
+    Default: 'no'
+    AllowedValues: ['yes','no']
+  AppkubeDepartment:
+    Type: String
+  AppkubeProduct:
+    Type: String
+  AppkubeEnvironment:
+    Type: String
+  AppkubeService:
+    Type: String
+
+Resources:
+  AcmCertificateStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ./acm-certificate.yaml
+      Parameters:
+        SubDomain: !Ref SubDomain
+        DomainName: !Ref DomainName
+        CreateApex: !Ref CreateApex
+        HostedZoneId: !Ref HostedZoneId
+      Tags:
+        - Key: Solution
+          Value: ACFS3
+        - Key: AppkubeDepartment
+          Value: !Ref AppkubeDepartment
+        - Key: AppkubeProduct
+          Value: !Ref AppkubeProduct
+        - Key: AppkubeEnvironment
+          Value: !Ref AppkubeEnvironment
+        - Key: AppkubeService
+          Value: !Ref AppkubeService
+
+Outputs:
+  SolutionVersion:
+    Value: !FindInMap [Solution, Constants, Version]
+  CertificateArn:
+    Description: Created Certificate
+    Value: !GetAtt AcmCertificateStack.Outputs.CertificateArn

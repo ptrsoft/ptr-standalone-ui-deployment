@@ -1,0 +1,215 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: ACFS3 - S3 Static site with CF and ACM (uksb-1qnk6ni7b) (version:v0.5)
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: ServiceMetaData
+      Parameters:
+      - AppkubeDepartment
+      - AppkubeProduct
+      - AppkubeEnvironment
+      - AppkubeService
+Mappings:
+  Solution:
+    Constants:
+      Version: v0.9
+Rules:
+  OnlyUsEast1:
+    Assertions:
+    - Assert:
+        Fn::Equals:
+        - Ref: AWS::Region
+        - us-east-1
+      AssertDescription: "This template can only be deployed in the us-east-1 region.\n\
+        This is because the ACM Certificate must be created in us-east-1\n"
+Parameters:
+  SubDomain:
+    Description: The part of a website address before your DomainName - e.g. www or
+      img
+    Type: String
+    Default: www
+    AllowedPattern: ^[^.]*$
+  DomainName:
+    Description: The part of a website address after your SubDomain - e.g. example.com
+    Type: String
+  HostedZoneId:
+    Description: HostedZoneId for the domain e.g. Z23ABC4XYZL05B
+    Type: String
+  CreateApex:
+    Description: Create an Apex Alias in CloudFront distribution - yes/no
+    Type: String
+    Default: 'no'
+    AllowedValues:
+    - 'yes'
+    - 'no'
+  AppkubeDepartment:
+    Type: String
+  AppkubeProduct:
+    Type: String
+  AppkubeEnvironment:
+    Type: String
+  AppkubeService:
+    Type: String
+Resources:
+  CustomResourceStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site/01831f2ba9ad3d0123ff5bf84a83dc97.template
+      Tags:
+      - Key: Solution
+        Value: ACFS3
+      - Key: AppkubeDepartment
+        Value:
+          Ref: AppkubeDepartment
+      - Key: AppkubeProduct
+        Value:
+          Ref: AppkubeProduct
+      - Key: AppkubeEnvironment
+        Value:
+          Ref: AppkubeEnvironment
+      - Key: AppkubeService
+        Value:
+          Ref: AppkubeService
+      Parameters:
+        AppkubeDepartment:
+          Ref: AppkubeDepartment
+        AppkubeProduct:
+          Ref: AppkubeProduct
+        AppkubeEnvironment:
+          Ref: AppkubeEnvironment
+        AppkubeService:
+          Ref: AppkubeService
+  AcmCertificateStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site/36356fd9dd7f6ab4db15b23ac7be9dc2.template
+      Parameters:
+        SubDomain:
+          Ref: SubDomain
+        DomainName:
+          Ref: DomainName
+        CreateApex:
+          Ref: CreateApex
+        HostedZoneId:
+          Ref: HostedZoneId
+      Tags:
+      - Key: Solution
+        Value: ACFS3
+      - Key: AppkubeDepartment
+        Value:
+          Ref: AppkubeDepartment
+      - Key: AppkubeProduct
+        Value:
+          Ref: AppkubeProduct
+      - Key: AppkubeEnvironment
+        Value:
+          Ref: AppkubeEnvironment
+      - Key: AppkubeService
+        Value:
+          Ref: AppkubeService
+  CloudFrontStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site/133b77372b3c5becaaef784cb8400eb3.template
+      Parameters:
+        CertificateArn:
+          Fn::GetAtt:
+          - AcmCertificateStack
+          - Outputs.CertificateArn
+        DomainName:
+          Ref: DomainName
+        SubDomain:
+          Ref: SubDomain
+        CreateApex:
+          Ref: CreateApex
+        S3BucketRoot:
+          Fn::GetAtt:
+          - CustomResourceStack
+          - Outputs.S3BucketRoot
+        S3BucketRootName:
+          Fn::GetAtt:
+          - CustomResourceStack
+          - Outputs.S3BucketRootName
+        S3BucketRootArn:
+          Fn::GetAtt:
+          - CustomResourceStack
+          - Outputs.S3BucketRootArn
+        S3BucketLogs:
+          Fn::GetAtt:
+          - CustomResourceStack
+          - Outputs.S3BucketLogs
+        S3BucketLogsName:
+          Fn::GetAtt:
+          - CustomResourceStack
+          - Outputs.S3BucketLogsName
+      Tags:
+      - Key: Solution
+        Value: ACFS3
+      - Key: AppkubeDepartment
+        Value:
+          Ref: AppkubeDepartment
+      - Key: AppkubeProduct
+        Value:
+          Ref: AppkubeProduct
+      - Key: AppkubeEnvironment
+        Value:
+          Ref: AppkubeEnvironment
+      - Key: AppkubeService
+        Value:
+          Ref: AppkubeService
+Outputs:
+  SolutionVersion:
+    Value:
+      Fn::FindInMap:
+      - Solution
+      - Constants
+      - Version
+  CopyFunction:
+    Description: S3 helper function
+    Value:
+      Fn::GetAtt:
+      - CustomResourceStack
+      - Outputs.CopyFunction
+  S3BucketLogs:
+    Description: Logging bucket
+    Value:
+      Fn::GetAtt:
+      - CustomResourceStack
+      - Outputs.S3BucketLogs
+  S3BucketRoot:
+    Description: Website bucket
+    Value:
+      Fn::GetAtt:
+      - CustomResourceStack
+      - Outputs.S3BucketRoot
+  S3BucketLogsName:
+    Description: Logging bucket name
+    Value:
+      Fn::GetAtt:
+      - CustomResourceStack
+      - Outputs.S3BucketLogsName
+  S3BucketRootName:
+    Description: Website bucket name
+    Value:
+      Fn::GetAtt:
+      - CustomResourceStack
+      - Outputs.S3BucketRootName
+  CertificateArn:
+    Description: Issued certificate
+    Value:
+      Fn::GetAtt:
+      - AcmCertificateStack
+      - Outputs.CertificateArn
+  CFDistributionName:
+    Description: CloudFront distribution
+    Value:
+      Fn::GetAtt:
+      - CloudFrontStack
+      - Outputs.CloudFrontDistribution
+  CloudFrontDomainName:
+    Description: Website address
+    Value:
+      Fn::GetAtt:
+      - CloudFrontStack
+      - Outputs.CloudFrontDomainName
