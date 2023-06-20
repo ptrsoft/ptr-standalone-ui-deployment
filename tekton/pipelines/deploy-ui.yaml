@@ -6,21 +6,21 @@ metadata:
   name: build-service
 spec:
   description: |
-    sparse-checkout-list-dir takes a git repository and a list of
-    directory patterns to match and lists all cloned files and directories.
-    This is an example pipeline demonstrating the following:
-      - Using the git-clone catalog Task to clone a specific set of
-        files based on directory patterns.
-      - Passing a cloned repo to subsequent Tasks using a Workspace.
-      - Ordering Tasks in a Pipeline using "runAfter" so that
-        git-clone completes before we try to read from the Workspace.
-      - Using a volumeClaimTemplate Volume as a Workspace.
-      - Avoiding hard-coded paths by using a Workspace's path
-        variable instead.
+    The pipeline will do UI deployment in AWS CDN from github UI 
+    This pipeline will do the following steps:
+      - Using the git-clone catalog Task to clone the UI source Code
+      - It will do build the UI code , and create the deployment artifacts that need to be copied to S3
+      - Then it will git clone the deployment source code 
+      - It will copy the build artifacts into the www folder fo deployment folder.
+      - It will then invoke the cloud formation template using aws cli
+      - Then it should test the UI availability
   params:
-  - name: repo-url
+  - name: ui-repo-url
     type: string
-    description: The git repository URL to clone from.
+    description: The UI git repository URL to clone from.
+  - name: deployment-repo-url
+    type: string
+    description: The deployment git repository URL to clone from.
   - name: dockerImageUrl
     type: string
     description: Docker Image URL to push the image
