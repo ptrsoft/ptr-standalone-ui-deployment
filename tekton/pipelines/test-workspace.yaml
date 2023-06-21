@@ -39,7 +39,7 @@ spec:
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: pr-different-path
+  name: list-workspaces-contents
 spec:
   pipelineRef:
     name: pipeline-using-different-subpaths

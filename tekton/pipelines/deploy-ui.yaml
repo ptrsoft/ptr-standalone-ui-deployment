@@ -38,6 +38,14 @@ spec:
     params:
     - name: url
       value: $(params.ui-repo-url)
+  - name: list-workspace
+    runAfter:
+      - fetch-repo
+    taskRef:
+      name: read-workspace
+    workspaces:
+    - name: local-ws
+      workspace: ui-code
   - name: install-dependencies
     runAfter:
       - fetch-repo
@@ -47,8 +55,6 @@ spec:
     - name: source
       workspace: ui-code
     params:
-    - name: PATH_CONTEXT
-      value: $(workspaces.output.path)
     - name: ARGS
       value:
         - clean-install
@@ -82,7 +88,7 @@ spec:
         - ReadWriteOnce
         resources:
           requests:
-            storage: 1Gi
+            storage: 4Gi
   - name: deployment-code
     volumeClaimTemplate:
       spec:
