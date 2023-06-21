@@ -58,7 +58,7 @@ spec:
     - name: ARGS
       value:
         - clean-install
-  - name: run-test
+  - name: build-ui
     runAfter:
       - install-dependencies
     taskRef:
@@ -71,7 +71,59 @@ spec:
         value: $(workspaces.source.path)
       - name: ARGS
         value:
-          - test
+          - "run"
+          - "build"
+  - name: list-workspace-after-build
+    runAfter:
+      - build-ui
+    taskRef:
+      name: read-workspace
+    workspaces:
+    - name: local-ws
+      workspace: ui-code
+  - name: list-build-folder-contents
+    runAfter:
+      - build-ui
+    taskRef:
+      name: read-directory
+    params:
+    - name: directory
+      value: build
+    workspaces:
+    - name: local-ws
+      workspace: ui-code
+  - name: fetch-deployment-repo
+    runAfter:
+        - list-build-folder-contents
+    taskRef:
+      name: git-clone
+    workspaces:
+    - name: output
+      workspace: deployment-code
+    params:
+    - name: url
+      value: $(params.deployment-repo-url)
+  - name: list-deployment-workspace
+    runAfter:
+      - fetch-deployment-repo
+    taskRef:
+      name: read-workspace
+    workspaces:
+    - name: local-ws
+      workspace: deployment-code
+
+  - name: copy-build-content-in-www
+    runAfter:
+      - list-deployment-workspace
+    taskRef:
+      name: copy-folder-between-workspace
+    params:
+    - name: directory
+      value: build
+    workspaces:
+    - name: source-ws
+      workspace: deployment-code
+
 ---
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
@@ -101,4 +153,4 @@ spec:
   - name: ui-repo-url
     value: https://github.com/AppkubeCloud/appkube-standalone-ui.git
   - name: deployment-repo-url
-    value: https://github.com/dcanadillas/petclinic-kaniko.git
+    value: https://github.com/AppkubeCloud/appkube-standalone-ui-deployment.git

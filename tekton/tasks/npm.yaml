@@ -32,13 +32,23 @@ spec:
       default: "docker.io/library/node:12-alpine@sha256:dfbebf17bfb014e1e7068e76325a117bccf8679c68aec6a28514184a209c8bae"
       description: The node image you want to use.
   steps:
+    - name: echo-param
+      image: bash
+      args: [
+        "echo",
+        "$(params['ARGS'])",
+      ]
     - name: npm-run
       image: $(params.IMAGE)
       command:
         - "npm"
       args:
-        - $(params.ARGS)
+        - $(params.ARGS[*])
+        # [
+        # "run",
+        # "$(params.ARGS[*])",
+        # ]
       workingDir: $(workspaces.source.path)/$(params.PATH_CONTEXT)
       env:
         - name: CI
-          value: "true"
+          value: "false"
