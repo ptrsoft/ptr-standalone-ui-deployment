@@ -3,7 +3,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: build-service
+  name: ui-build-service
 spec:
   description: |
     The pipeline will do UI deployment in AWS CDN from github UI 
@@ -21,66 +21,69 @@ spec:
   - name: deployment-repo-url
     type: string
     description: The deployment git repository URL to clone from.
-  - name: dockerImageUrl
-    type: string
-    description: Docker Image URL to push the image
   workspaces:
-  - name: shared-data
+  - name: ui-code
     description: |
-      This workspace will receive the cloned git repo and be passed
-      to the next Task to list all cloned files and directories.
-  - name: dockerconfig-secret
+      This workspace will clone the UI codes and build the code
+  - name: deployment-code
     description: |
-      This workspace will have docker config.json
+      This workspace will clone the deployment  codes and invoke the AWS cloudformation script
   tasks:
   - name: fetch-repo
     taskRef:
       name: git-clone
     workspaces:
     - name: output
-      workspace: shared-data
+      workspace: ui-code
     params:
     - name: url
-      value: $(params.repo-url)
-  - name: build-maven
-    runAfter: ["fetch-repo"]
+      value: $(params.ui-repo-url)
+  - name: install-dependencies
+    runAfter:
+      - fetch-repo
     taskRef:
-      name: build-maven
+      name: npm
     workspaces:
     - name: source
-      workspace: shared-data
+      workspace: ui-code
     params:
-    - name: workingDir
-      value: $(workspaces.source.path)
-  - name: build-kaniko
-    runAfter: ["build-maven"]
+    - name: PATH_CONTEXT
+      value: $(workspaces.output.path)
+    - name: ARGS
+      value:
+        - clean-install
+  - name: run-test
+    runAfter:
+      - install-dependencies
     taskRef:
-      name: build-kaniko
+      name: npm
     workspaces:
-    - name: source
-      workspace: shared-data
-    - name: dockerconfig
-      workspace: dockerconfig-secret
+      - name: source
+        workspace: ui-code
     params:
-    - name: IMAGE
-      value: $(params.dockerImageUrl)
-    - name: DOCKERFILE
-      value: $(workspaces.source.path)/Dockerfile
-    - name: CONTEXT
-      value: ./
+      - name: PATH_CONTEXT
+        value: $(workspaces.source.path)
+      - name: ARGS
+        value:
+          - test
 ---
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: build-service-run
+  name: ui-build-service-run
 spec:
   pipelineRef:
-    name: build-service
+    name: ui-build-service
   workspaces:
-  - name: dockerconfig-secret
-    secret:
-      secretName: kaniko-secret
-  - name: shared-data
+  - name: ui-code
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+  - name: deployment-code
     volumeClaimTemplate:
       spec:
         accessModes:
@@ -89,7 +92,7 @@ spec:
           requests:
             storage: 1Gi
   params:
-  - name: repo-url
+  - name: ui-repo-url
+    value: https://github.com/AppkubeCloud/appkube-standalone-ui.git
+  - name: deployment-repo-url
     value: https://github.com/dcanadillas/petclinic-kaniko.git
-  - name: dockerImageUrl
-    value: synectiks/docker-builders:kaniko
