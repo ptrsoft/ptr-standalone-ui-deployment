@@ -4,6 +4,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
   name: ui-build-service
+  namespace: tekton-pipelines
 spec:
   description: |
     The pipeline will do UI deployment in AWS CDN from github UI 
@@ -28,6 +29,9 @@ spec:
   - name: deployment-code
     description: |
       This workspace will clone the deployment  codes and invoke the AWS cloudformation script
+  - name: aws-secrets
+    description: |
+      This workspace will hold aws credentials
   tasks:
   - name: fetch-repo
     taskRef:
@@ -57,7 +61,7 @@ spec:
     params:
     - name: ARGS
       value:
-        - clean-install
+        - install
   - name: build-ui
     runAfter:
       - install-dependencies
@@ -111,24 +115,83 @@ spec:
     workspaces:
     - name: local-ws
       workspace: deployment-code
-
   - name: copy-build-content-in-www
     runAfter:
       - list-deployment-workspace
     taskRef:
       name: copy-folder-between-workspace
     params:
-    - name: directory
+    - name: source-directory
       value: build
+    - name: dest-directory
+      value: www
     workspaces:
     - name: source-ws
+      workspace: ui-code
+    - name: dest-ws
       workspace: deployment-code
+  - name: cleanup-prior-ui-hosting
+    onError: continue
+    runAfter:
+      - copy-build-content-in-www
+    taskRef:
+      name: aws-cli
+    params:
+      - name: SCRIPT
+        value: |
+          export AWS_CONFIG_FILE=/tekton/home/.aws/config
+          export AWS_SHARED_CREDENTIALS_FILE=/tekton/home/.aws/credentials
+          echo "aws configuration"
+          aws configure list
+          echo "Cleanup UI hosting, "
+          aws s3 rm s3://$1 --recursive
+          aws s3 rm s3://ops-appkube-$2-$3-log --recursive 
+          aws s3 rm s3://ops-appkube-$2-$3-root --recursive
+          aws --region us-east-1 --profile devops cloudformation delete-stack --stack-name ops-appkube-$2-$3
+          aws --region us-east-1 --profile devops cloudformation wait stack-delete-complete --stack-name ops-appkube-$2-$3      
+      - name: ARGS
+        value:
+          - cf-static-secure-site # s3 bucket name
+          - ui # service name
+          - test # environment
+    workspaces:
+    - name: source
+      workspace: deployment-code
+    - name: secrets
+      workspace: aws-secrets
 
+  - name: run-cloudformation-for-ui-hosting
+    runAfter:
+      - cleanup-prior-ui-hosting
+    taskRef:
+      name: aws-cli
+    params:
+      - name: SCRIPT
+        value: |
+          export AWS_CONFIG_FILE=/tekton/home/.aws/config
+          export AWS_SHARED_CREDENTIALS_FILE=/tekton/home/.aws/credentials
+          echo "aws configuration"
+          aws configure list
+          echo "aws cloudformation execution"
+          aws --region us-east-1 cloudformation package --template-file $1 --s3-bucket $2 --output-template-file packaged.template
+          aws --region us-east-1 cloudformation deploy --stack-name ops-appkube-$3-$4 --template-file packaged.template --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --parameter-overrides DomainName=synectiks.net SubDomain=appkube$3$4 CreateApex=no HostedZoneId=ZY8RNBR15YWYU AppkubeDepartment=ops AppkubeProduct=appkube AppkubeEnvironment=$4 AppkubeService=ui
+      - name: ARGS
+        value:
+          - $(workspaces.source.path)/main.yaml # template 
+          - cf-static-secure-site # s3 bucket name
+          - ui # service name
+          - test # environment
+    workspaces:
+    - name: source
+      workspace: deployment-code
+    - name: secrets
+      workspace: aws-secrets
 ---
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
   name: ui-build-service-run
+  namespace: tekton-pipelines
 spec:
   pipelineRef:
     name: ui-build-service
@@ -149,6 +212,9 @@ spec:
         resources:
           requests:
             storage: 1Gi
+  - name: aws-secrets
+    secret:
+      secretName: smoke-aws-credentials
   params:
   - name: ui-repo-url
     value: https://github.com/AppkubeCloud/appkube-standalone-ui.git

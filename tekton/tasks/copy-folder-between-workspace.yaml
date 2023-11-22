@@ -2,6 +2,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: copy-folder-between-workspace
+  namespace: tekton-pipelines
 spec:
   params:
     - name: source-directory
@@ -14,11 +15,16 @@ spec:
       script: |
         #!/usr/bin/env bash
         set -xe
+        echo list dest-directory before removing the content
+        ls -al $(workspaces.dest-ws.path)/$(params.dest-directory)/
+        rm -r $(workspaces.dest-ws.path)/$(params.dest-directory)/*
+        echo copy build folder to dest-director and list contents
         cp -r $(workspaces.source-ws.path)/$(params.source-directory)/ $(workspaces.dest-ws.path)/$(params.dest-directory)/
+        ls -al $(workspaces.dest-ws.path)/$(params.dest-directory)/
   workspaces:
     - name: source-ws
       description: |
         The sorce workspace from where we copy the contents 
     - name: dest-ws
       description: |
-        The destination workspace       
+        The destination workspace      

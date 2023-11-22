@@ -2,6 +2,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: read-workspace
+  namespace: tekton-pipelines
 spec:
   workspaces:
     - name: local-ws
