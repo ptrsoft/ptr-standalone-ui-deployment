@@ -16,10 +16,10 @@ spec:
         #!/usr/bin/env bash
         set -xe
         echo list dest-directory before removing the content
-        ls -al $(workspaces.dest-ws.path)/$(params.dest-directory)/
-        rm -r $(workspaces.dest-ws.path)/$(params.dest-directory)/*
+        ls -al $(workspaces.dest-ws.path)/
+        rm -r $(workspaces.dest-ws.path)/$(params.dest-directory)
         echo copy build folder to dest-director and list contents
-        cp -r $(workspaces.source-ws.path)/$(params.source-directory)/ $(workspaces.dest-ws.path)/$(params.dest-directory)/
+        cp -r $(workspaces.source-ws.path)/$(params.source-directory)/ $(workspaces.dest-ws.path)/$(params.dest-directory)
         ls -al $(workspaces.dest-ws.path)/$(params.dest-directory)/
   workspaces:
     - name: source-ws

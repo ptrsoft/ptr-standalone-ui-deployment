@@ -131,7 +131,6 @@ spec:
     - name: dest-ws
       workspace: deployment-code
   - name: cleanup-prior-ui-hosting
-    onError: continue
     runAfter:
       - copy-build-content-in-www
     taskRef:
@@ -144,11 +143,11 @@ spec:
           echo "aws configuration"
           aws configure list
           echo "Cleanup UI hosting, "
+          aws --region us-east-1 cloudformation delete-stack --stack-name ops-appkube-$2-$3
+          aws --region us-east-1 cloudformation wait stack-delete-complete --stack-name ops-appkube-$2-$3
           aws s3 rm s3://$1 --recursive
-          aws s3 rm s3://ops-appkube-$2-$3-log --recursive 
-          aws s3 rm s3://ops-appkube-$2-$3-root --recursive
-          aws --region us-east-1 --profile devops cloudformation delete-stack --stack-name ops-appkube-$2-$3
-          aws --region us-east-1 --profile devops cloudformation wait stack-delete-complete --stack-name ops-appkube-$2-$3      
+          aws s3 rb s3://ops-appkube-$3-$2-log --force
+          aws s3 rb s3://ops-appkube-$3-$2-root --force
       - name: ARGS
         value:
           - cf-static-secure-site # s3 bucket name
