@@ -152,7 +152,7 @@ spec:
         value:
           - cf-static-secure-site # s3 bucket name
           - ui # service name
-          - test # environment
+          - prod # environment
     workspaces:
     - name: source
       workspace: deployment-code
@@ -173,13 +173,13 @@ spec:
           aws configure list
           echo "aws cloudformation execution"
           aws --region us-east-1 cloudformation package --template-file $1 --s3-bucket $2 --output-template-file packaged.template
-          aws --region us-east-1 cloudformation deploy --stack-name ops-appkube-$3-$4 --template-file packaged.template --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --parameter-overrides DomainName=synectiks.net SubDomain=appkube$3$4 CreateApex=no HostedZoneId=ZY8RNBR15YWYU AppkubeDepartment=ops AppkubeProduct=appkube AppkubeEnvironment=$4 AppkubeService=ui
+          aws --region us-east-1 cloudformation deploy --stack-name ops-appkube-$3-$4 --template-file packaged.template --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --parameter-overrides DomainName=synectiks.net SubDomain=appkube CreateApex=no HostedZoneId=ZY8RNBR15YWYU AppkubeDepartment=ops AppkubeProduct=appkube AppkubeEnvironment=$4 AppkubeService=$3
       - name: ARGS
         value:
           - $(workspaces.source.path)/main.yaml # template 
           - cf-static-secure-site # s3 bucket name
           - ui # service name
-          - test # environment
+          - prod # environment
     workspaces:
     - name: source
       workspace: deployment-code
