@@ -22,6 +22,9 @@ spec:
   - name: deployment-repo-url
     type: string
     description: The deployment git repository URL to clone from.
+  - name: cleanup-cloudformation
+    type: string
+    description: parameter to control cloudformation cleanup
   workspaces:
   - name: ui-code
     description: |
@@ -131,6 +134,10 @@ spec:
     - name: dest-ws
       workspace: deployment-code
   - name: cleanup-prior-ui-hosting
+    when:
+      - input: "$(params.cleanup-cloudformation)"
+        operator: in
+        values: ["true"]
     runAfter:
       - copy-build-content-in-www
     taskRef:
@@ -174,6 +181,9 @@ spec:
           echo "aws cloudformation execution"
           aws --region us-east-1 cloudformation package --template-file $1 --s3-bucket $2 --output-template-file packaged.template
           aws --region us-east-1 cloudformation deploy --stack-name ops-appkube-$3-$4 --template-file packaged.template --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --parameter-overrides DomainName=synectiks.net SubDomain=appkube CreateApex=no HostedZoneId=ZY8RNBR15YWYU AppkubeDepartment=ops AppkubeProduct=appkube AppkubeEnvironment=$4 AppkubeService=$3
+          export cloudfrontid=aws cloudfront list-distributions --query 'DistributionList.Items[?Aliases.Items[?contains(@, `appkube.synectiks.net`)]].Id' --output text
+          # aws cloudfront get-distribution --id $cloudfrontid
+          aws cloudfront create-invalidation --distribution-id $cloudfrontid --paths "/*"
       - name: ARGS
         value:
           - $(workspaces.source.path)/main.yaml # template 
@@ -219,3 +229,5 @@ spec:
     value: https://github.com/AppkubeCloud/appkube-standalone-ui.git
   - name: deployment-repo-url
     value: https://github.com/AppkubeCloud/appkube-standalone-ui-deployment.git
+  - name: cleanup-cloudformation
+    value: "false"
