@@ -4,9 +4,13 @@ metadata:
   name: read-workspace
   namespace: tekton-pipelines
 spec:
+  params:
+  - name: PATH_CONTEXT
+    type: string
+    default: "."
   workspaces:
     - name: local-ws
   steps:
     - name: list-files
       image: ubuntu
-      script: ls -a $(workspaces.local-ws.path)
+      script: ls -a $(workspaces.local-ws.path)/$(params.PATH_CONTEXT)

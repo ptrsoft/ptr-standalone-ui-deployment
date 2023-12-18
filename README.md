@@ -56,3 +56,20 @@ aws --region us-east-1 cloudformation deploy \
     AppkubeDepartment=ops AppkubeProduct=appkube AppkubeEnvironment=sim AppkubeService=ui
 
 Note:- make sure that parameters are in lower case , otherwise bucket name is not accepted as uppercase. Also when u build the template , if u are not using S3 target location , template will not work.
+
+### Pipeline implementation
+This repos contains cloudfromation code which does full stack cleanup & deployment for UI service. For update we sync latest build artifacts to s3 bucket and invalidate cloudfront
+	
+    Based on "cleanup-cloudformation" parameter
+    this pipeline will do UI deployment in AWS cloudformation or 
+    sync deployment files to s3 bucket and invalidate cloudfront 
+    This pipeline will do the following steps:
+      - Using the git-clone catalog Task to clone the UI source Code
+      - It will do build the UI code , and create the deployment artifacts that need to be copied to S3
+      when "cleanup-cloudformation" parameter is true
+      - Then it will git clone the deployment source code 
+      - It will copy the build artifacts into the www folder in deployment workspace.
+      - It will then invoke the cloud formation template using aws cli
+    when "cleanup-cloudformation" parameter is false
+      - sync UI code to s3 bucket
+      - Run cloudfront invalidation

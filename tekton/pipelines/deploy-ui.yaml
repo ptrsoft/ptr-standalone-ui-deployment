@@ -12,13 +12,16 @@ spec:
       - Using the git-clone catalog Task to clone the UI source Code
       - It will do build the UI code , and create the deployment artifacts that need to be copied to S3
       - Then it will git clone the deployment source code 
-      - It will copy the build artifacts into the www folder fo deployment folder.
+      - It will copy the build artifacts into the www folder in deployment workspace.
       - It will then invoke the cloud formation template using aws cli
       - Then it should test the UI availability
   params:
   - name: ui-repo-url
     type: string
     description: The UI git repository URL to clone from.
+  - name: repo-revision
+    type: string
+    description: service revision to checkout. (branch, tag, sha, ref, etc...)
   - name: deployment-repo-url
     type: string
     description: The deployment git repository URL to clone from.
@@ -29,9 +32,6 @@ spec:
   - name: ui-code
     description: |
       This workspace will clone the UI codes and build the code
-  - name: deployment-code
-    description: |
-      This workspace will clone the deployment  codes and invoke the AWS cloudformation script
   - name: aws-secrets
     description: |
       This workspace will hold aws credentials
@@ -45,11 +45,18 @@ spec:
     params:
     - name: url
       value: $(params.ui-repo-url)
+    - name: subdirectory
+      value: "ui-code"
+    - name: revision
+      value: $(params.repo-revision)
   - name: list-workspace
     runAfter:
       - fetch-repo
     taskRef:
       name: read-workspace
+    params:
+    - name: PATH_CONTEXT
+      value: ui-code
     workspaces:
     - name: local-ws
       workspace: ui-code
@@ -65,6 +72,8 @@ spec:
     - name: ARGS
       value:
         - install
+    - name: PATH_CONTEXT
+      value: ui-code
   - name: build-ui
     runAfter:
       - install-dependencies
@@ -75,7 +84,7 @@ spec:
         workspace: ui-code
     params:
       - name: PATH_CONTEXT
-        value: $(workspaces.source.path)
+        value: ui-code
       - name: ARGS
         value:
           - "run"
@@ -85,6 +94,9 @@ spec:
       - build-ui
     taskRef:
       name: read-workspace
+    params:
+    - name: PATH_CONTEXT
+      value: ui-code
     workspaces:
     - name: local-ws
       workspace: ui-code
@@ -95,44 +107,61 @@ spec:
       name: read-directory
     params:
     - name: directory
-      value: build
+      value: ui-code/build
     workspaces:
     - name: local-ws
       workspace: ui-code
   - name: fetch-deployment-repo
+    when:
+      - input: "$(params.cleanup-cloudformation)"
+        operator: in
+        values: ["true"]
     runAfter:
         - list-build-folder-contents
     taskRef:
       name: git-clone
     workspaces:
     - name: output
-      workspace: deployment-code
+      workspace: ui-code
     params:
+    - name: subdirectory
+      value: "deploy-code"
     - name: url
       value: $(params.deployment-repo-url)
   - name: list-deployment-workspace
+    when:
+      - input: "$(params.cleanup-cloudformation)"
+        operator: in
+        values: ["true"]
     runAfter:
       - fetch-deployment-repo
     taskRef:
       name: read-workspace
+    params:
+      - name: PATH_CONTEXT
+        value: deploy-code
     workspaces:
     - name: local-ws
-      workspace: deployment-code
+      workspace: ui-code
   - name: copy-build-content-in-www
+    when:
+      - input: "$(params.cleanup-cloudformation)"
+        operator: in
+        values: ["true"]
     runAfter:
       - list-deployment-workspace
     taskRef:
       name: copy-folder-between-workspace
     params:
     - name: source-directory
-      value: build
+      value: ui-code/build
     - name: dest-directory
-      value: www
+      value: deploy-code/www
     workspaces:
     - name: source-ws
       workspace: ui-code
     - name: dest-ws
-      workspace: deployment-code
+      workspace: ui-code
   - name: cleanup-prior-ui-hosting
     when:
       - input: "$(params.cleanup-cloudformation)"
@@ -150,6 +179,7 @@ spec:
           echo "aws configuration"
           aws configure list
           echo "Cleanup UI hosting, "
+          pushd $4
           aws --region us-east-1 cloudformation delete-stack --stack-name ops-appkube-$2-$3
           aws --region us-east-1 cloudformation wait stack-delete-complete --stack-name ops-appkube-$2-$3
           aws s3 rm s3://$1 --recursive
@@ -157,16 +187,20 @@ spec:
           aws s3 rb s3://ops-appkube-$3-$2-root --force
       - name: ARGS
         value:
-          - cf-static-secure-site # s3 bucket name
+          - static-secure-site # s3 bucket name
           - ui # service name
           - prod # environment
+          - $(workspaces.source.path)/ui-code # working directory
     workspaces:
     - name: source
-      workspace: deployment-code
+      workspace: ui-code
     - name: secrets
       workspace: aws-secrets
-
   - name: run-cloudformation-for-ui-hosting
+    when:
+      - input: "$(params.cleanup-cloudformation)"
+        operator: in
+        values: ["true"] 
     runAfter:
       - cleanup-prior-ui-hosting
     taskRef:
@@ -178,21 +212,56 @@ spec:
           export AWS_SHARED_CREDENTIALS_FILE=/tekton/home/.aws/credentials
           echo "aws configuration"
           aws configure list
+          pushd $5
           echo "aws cloudformation execution"
           aws --region us-east-1 cloudformation package --template-file $1 --s3-bucket $2 --output-template-file packaged.template
           aws --region us-east-1 cloudformation deploy --stack-name ops-appkube-$3-$4 --template-file packaged.template --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --parameter-overrides DomainName=synectiks.net SubDomain=appkube CreateApex=no HostedZoneId=ZY8RNBR15YWYU AppkubeDepartment=ops AppkubeProduct=appkube AppkubeEnvironment=$4 AppkubeService=$3
-          export cloudfrontid=aws cloudfront list-distributions --query 'DistributionList.Items[?Aliases.Items[?contains(@, `appkube.synectiks.net`)]].Id' --output text
-          # aws cloudfront get-distribution --id $cloudfrontid
-          aws cloudfront create-invalidation --distribution-id $cloudfrontid --paths "/*"
       - name: ARGS
         value:
-          - $(workspaces.source.path)/main.yaml # template 
+          - $(workspaces.source.path)/ui-code/main.yaml # template 
           - cf-static-secure-site # s3 bucket name
+          - ui # service name
+          - prod # environment
+          - $(workspaces.source.path)/ui-code # working directory
+    workspaces:
+    - name: source
+      workspace: ui-code
+    - name: secrets
+      workspace: aws-secrets
+  - name: run-invalidations-for-ui-hosting
+    when:
+      - input: "$(params.cleanup-cloudformation)"
+        operator: in
+        values: ["false"]
+    runAfter:
+      - run-cloudformation-for-ui-hosting
+    taskRef:
+      name: aws-cli
+    params:
+      - name: SCRIPT
+        value: |
+          export AWS_CONFIG_FILE=/tekton/home/.aws/config
+          export AWS_SHARED_CREDENTIALS_FILE=/tekton/home/.aws/credentials
+          echo "aws configuration"
+          aws configure list
+          pushd $2
+          echo sync s3 with new dployment files
+          aws s3 sync build s3://ops-appkube-$4-$3-root --delete
+          echo "aws cloudfront invalidatation"
+          export cloudfrontid=$(aws cloudfront list-distributions --query 'DistributionList.Items[?Aliases.Items[?contains(@, `appkube.synectiks.net`)]].Id' --output text)
+          echo cloudfrontid: $cloudfrontid
+          invalidation_output=$(aws cloudfront create-invalidation --distribution-id $cloudfrontid --paths "/*")
+          invalidation_id=$(echo $invalidation_output | grep -oP '(?<="Id": ")[^"]*' | cut -d'"' -f1)      
+          aws cloudfront wait invalidation-completed --distribution-id $cloudfrontid --id $invalidation_id
+      - name: ARGS
+        value:
+          - appkube.synectiks.net # url
+          - $(workspaces.source.path)/ui-code # working directory
           - ui # service name
           - prod # environment
     workspaces:
     - name: source
-      workspace: deployment-code
+      workspace: ui-code
     - name: secrets
       workspace: aws-secrets
 ---
@@ -213,20 +282,14 @@ spec:
         resources:
           requests:
             storage: 4Gi
-  - name: deployment-code
-    volumeClaimTemplate:
-      spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
   - name: aws-secrets
     secret:
       secretName: smoke-aws-credentials
   params:
   - name: ui-repo-url
     value: https://github.com/AppkubeCloud/appkube-standalone-ui.git
+  - name: repo-revision
+    value: ''
   - name: deployment-repo-url
     value: https://github.com/AppkubeCloud/appkube-standalone-ui-deployment.git
   - name: cleanup-cloudformation
