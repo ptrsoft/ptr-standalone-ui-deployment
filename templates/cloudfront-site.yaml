@@ -136,28 +136,17 @@ Resources:
       Properties: 
         ResponseHeadersPolicyConfig: 
           Name: !Sub "${AWS::StackName}-static-site-security-headers"
-          SecurityHeadersConfig: 
-            StrictTransportSecurity: 
-              AccessControlMaxAgeSec: 63072000
-              IncludeSubdomains: true
+          Comment: 'Policy for appkube.synectiks.net UI deployment'
+          SecurityHeadersConfig:
+            ContentSecurityPolicy:
+              ContentSecurityPolicy: 'Content-Security-Policy: default-src ''self'''
               Override: true
-              Preload: true
-            ContentSecurityPolicy: 
-              ContentSecurityPolicy: "default-src 'self'"
+            ContentTypeOptions:
               Override: true
-            ContentTypeOptions: 
-              Override: true
-            FrameOptions:
-              FrameOption: DENY
-              Override: true
-            ReferrerPolicy: 
-              ReferrerPolicy: "no-referrer"
-              Override: true
-            XSSProtection: 
-              ModeBlock: true
-              Override: true
-              Protection: true
-
+            FrameOptions: {}
+            ReferrerPolicy: {}
+            StrictTransportSecurity: {}
+            XSSProtection: {}
 Outputs:
   CloudFrontDistribution:
     Description: CloudFront distribution
