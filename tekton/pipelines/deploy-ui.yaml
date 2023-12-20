@@ -258,6 +258,7 @@ spec:
           invalidation_output=$(aws cloudfront create-invalidation --distribution-id $cloudfrontid --paths "/*")
           invalidation_id=$(echo $invalidation_output | grep -oP '(?<="Id": ")[^"]*' | cut -d'"' -f1)      
           aws cloudfront wait invalidation-completed --distribution-id $cloudfrontid --id $invalidation_id
+          echo Invalidation completed, Invalidation ID: $invalidation_id
       - name: ARGS
         value:
           - appkube.synectiks.net # url
