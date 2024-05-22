@@ -290,7 +290,7 @@ spec:
             storage: 4Gi
   - name: aws-secrets
     secret:
-      secretName: smoke-aws-credentials
+      secretName: aws-credentials
   params:
   - name: ui-repo-url
     value: https://github.com/ptrsoft/ptr-standalone-ui.git
