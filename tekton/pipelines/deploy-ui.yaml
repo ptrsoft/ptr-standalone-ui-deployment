@@ -107,7 +107,7 @@ spec:
       workspace: ui-code
   - name: list-build-folder-contents
     runAfter:
-      - build-ui
+      - list-workspace-after-build
     taskRef:
       name: read-directory
     params:
@@ -117,12 +117,12 @@ spec:
     - name: local-ws
       workspace: ui-code
   - name: fetch-deployment-repo
+    runAfter:
+      - list-build-folder-contents
     when:
       - input: "$(params.cleanup-cloudformation)"
         operator: in
         values: ["true"]
-    runAfter:
-        - list-build-folder-contents
     taskRef:
       name: git-clone
     workspaces:
@@ -134,12 +134,12 @@ spec:
     - name: url
       value: $(params.deployment-repo-url)
   - name: list-deployment-workspace
+    runAfter:
+      - fetch-deployment-repo
     when:
       - input: "$(params.cleanup-cloudformation)"
         operator: in
         values: ["true"]
-    runAfter:
-      - fetch-deployment-repo
     taskRef:
       name: read-workspace
     params:
@@ -149,12 +149,12 @@ spec:
     - name: local-ws
       workspace: ui-code
   - name: copy-build-content-in-www
+    runAfter:
+      - list-deployment-workspace
     when:
       - input: "$(params.cleanup-cloudformation)"
         operator: in
         values: ["true"]
-    runAfter:
-      - list-deployment-workspace
     taskRef:
       name: copy-folder-between-workspace
     params:
