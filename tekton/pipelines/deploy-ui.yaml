@@ -220,7 +220,7 @@ spec:
           pushd $5
           echo "aws cloudformation execution"
           aws --region us-east-1 cloudformation package --template-file $1 --s3-bucket $2 --output-template-file packaged.template
-          aws --region us-east-1 cloudformation deploy --stack-name ops-ptr-$3-$4 --template-file packaged.template --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --parameter-overrides DomainName=ptrtechnology.com SubDomain=appkube CreateApex=no HostedZoneId=Z06401662L0WAGUZJFQOF AppkubeDepartment=ops AppkubeProduct=appkube AppkubeEnvironment=$4 AppkubeService=$3
+          aws --region us-east-1 cloudformation deploy --stack-name ops-appkube-$3-$4 --template-file packaged.template --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --parameter-overrides DomainName=synectiks.net SubDomain=appkube CreateApex=no HostedZoneId=ZY8RNBR15YWYU AppkubeDepartment=ops AppkubeProduct=appkube AppkubeEnvironment=$4 AppkubeService=$3
       - name: ARGS
         value:
           - $(workspaces.source.path)/ui-code/main.yaml # template 
@@ -261,7 +261,7 @@ spec:
           echo Invalidation completed, Invalidation ID: $invalidation_id
       - name: ARGS
         value:
-          - appkube.ptrtechnology.com # url
+          - appkube.synectiks.net # url
           - $(workspaces.source.path)/ui-code # working directory
           - ui # service name
           - prod # environment
@@ -293,10 +293,10 @@ spec:
       secretName: smoke-aws-credentials
   params:
   - name: ui-repo-url
-    value: https://github.com/ptrsoft/ptr-standalone-ui.git
+    value: https://github.com/AppkubeCloud/appkube-standalone-ui.git
   - name: repo-revision
     value: ''
   - name: deployment-repo-url
-    value: https://github.com/ptrsoft/ptr-standalone-ui-deployment.git
+    value: https://github.com/AppkubeCloud/appkube-standalone-ui-deployment.git
   - name: cleanup-cloudformation
     value: "false"
