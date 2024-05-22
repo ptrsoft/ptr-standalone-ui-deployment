@@ -293,7 +293,7 @@ spec:
       secretName: smoke-aws-credentials
   params:
   - name: ui-repo-url
-    value: https://github.com/ptrsoft/ptr-standalone-ui-deployment.git
+    value: https://github.com/ptrsoft/ptr-standalone-ui.git
   - name: repo-revision
     value: ''
   - name: deployment-repo-url
