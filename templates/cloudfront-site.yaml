@@ -27,6 +27,9 @@ Parameters:
   S3BucketLogsName:
     Description: Log Bucket Name
     Type: String
+  HostedZoneId:
+    Description: HostedZoneId for the domain e.g. Z23ABC4XYZL05B
+    Type: String
   CreateApex: 
     Type: String
 
@@ -104,49 +107,60 @@ Resources:
       CloudFrontOriginAccessIdentityConfig:
         Comment: !Sub 'CloudFront OAI for ${SubDomain}.${DomainName}'
         
-  Route53RecordSetGroup:
-    Type: AWS::Route53::RecordSetGroup
-    Properties:
-      HostedZoneName: !Sub '${DomainName}.'
-      RecordSets:
-      - Name: !Sub '${SubDomain}.${DomainName}'
-        Type: 'A'
-        AliasTarget:
-          DNSName: !GetAtt 'CloudFrontDistribution.DomainName'
-          EvaluateTargetHealth: false
-          # The  following HosteZoneId is always used for alias records pointing to CF.
-          HostedZoneId: 'Z2FDTNDATAQYW2'
+  # Route53RecordSetGroup:
+  #   Type: AWS::Route53::RecordSetGroup
+  #   Properties:
+  #     HostedZoneName: !Sub '${DomainName}.'
+  #     RecordSets:
+  #     - Name: !Sub '${SubDomain}.${DomainName}'
+  #       Type: 'A'
+  #       AliasTarget:
+  #         DNSName: !GetAtt 'CloudFrontDistribution.DomainName'
+  #         EvaluateTargetHealth: false
+  #         # The  following HosteZoneId is always used for alias records pointing to CF.
+  #         HostedZoneId: !Ref 'HostedZoneId'
 
-  ApexRoute53RecordSetGroup:
-    Condition: CreateApexConfig
-    Type: AWS::Route53::RecordSetGroup
-    Properties:
-      HostedZoneName: !Sub '${DomainName}.'
-      RecordSets:
-      - Name: !Ref 'DomainName'
-        Type: 'A'
-        AliasTarget:
-          DNSName: !GetAtt 'CloudFrontDistribution.DomainName'
-          EvaluateTargetHealth: false
-          # The  following HosteZoneId is always used for alias records pointing to CF.
-          HostedZoneId: 'Z2FDTNDATAQYW2'
+  # ApexRoute53RecordSetGroup:
+  #   Condition: CreateApexConfig
+  #   Type: AWS::Route53::RecordSetGroup
+  #   Properties:
+  #     HostedZoneName: !Sub '${DomainName}.'
+  #     RecordSets:
+  #     - Name: !Ref 'DomainName'
+  #       Type: 'A'
+  #       AliasTarget:
+  #         DNSName: !GetAtt 'CloudFrontDistribution.DomainName'
+  #         EvaluateTargetHealth: false
+  #         # The  following HosteZoneId is always used for alias records pointing to CF.
+  #         HostedZoneId: !Ref 'HostedZoneId'
 
   ResponseHeadersPolicy:
       Type: AWS::CloudFront::ResponseHeadersPolicy
       Properties: 
         ResponseHeadersPolicyConfig: 
           Name: !Sub "${AWS::StackName}-static-site-security-headers"
-          Comment: 'Policy for appkube.synectiks.net UI deployment'
+          Comment: 'Policy for ptrcloud.ptrtechnology.com UI deployment'
           SecurityHeadersConfig:
             ContentSecurityPolicy:
               ContentSecurityPolicy: 'Content-Security-Policy: default-src ''self'''
               Override: true
             ContentTypeOptions:
               Override: true
-            FrameOptions: {}
-            ReferrerPolicy: {}
-            StrictTransportSecurity: {}
-            XSSProtection: {}
+            FrameOptions: 
+              FrameOption: "SAMEORIGIN"
+              Override: true
+            ReferrerPolicy: 
+              ReferrerPolicy: "origin-when-cross-origin"
+              Override: true
+            StrictTransportSecurity: 
+              AccessControlMaxAgeSec: 2400
+              IncludeSubdomains: true
+              Override: true
+              Preload: true
+            XSSProtection:
+              ModeBlock: true
+              Override: true
+              Protection: true
 Outputs:
   CloudFrontDistribution:
     Description: CloudFront distribution

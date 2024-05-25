@@ -113,6 +113,7 @@ Resources:
         DomainName: !Ref DomainName
         SubDomain: !Ref SubDomain
         CreateApex: !Ref CreateApex
+        HostedZoneId: !Ref HostedZoneId
         S3BucketRoot: !GetAtt CustomResourceStack.Outputs.S3BucketRoot
         S3BucketRootName: !GetAtt CustomResourceStack.Outputs.S3BucketRootName
         S3BucketRootArn: !GetAtt CustomResourceStack.Outputs.S3BucketRootArn

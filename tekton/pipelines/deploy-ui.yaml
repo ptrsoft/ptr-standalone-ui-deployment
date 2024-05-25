@@ -119,10 +119,6 @@ spec:
   - name: fetch-deployment-repo
     runAfter:
       - list-build-folder-contents
-    when:
-      - input: "$(params.cleanup-cloudformation)"
-        operator: in
-        values: ["true"]
     taskRef:
       name: git-clone
     workspaces:
@@ -136,10 +132,6 @@ spec:
   - name: list-deployment-workspace
     runAfter:
       - fetch-deployment-repo
-    when:
-      - input: "$(params.cleanup-cloudformation)"
-        operator: in
-        values: ["true"]
     taskRef:
       name: read-workspace
     params:
@@ -151,10 +143,6 @@ spec:
   - name: copy-build-content-in-www
     runAfter:
       - list-deployment-workspace
-    when:
-      - input: "$(params.cleanup-cloudformation)"
-        operator: in
-        values: ["true"]
     taskRef:
       name: copy-folder-between-workspace
     params:
@@ -168,10 +156,6 @@ spec:
     - name: dest-ws
       workspace: ui-code
   - name: cleanup-prior-ui-hosting
-    when:
-      - input: "$(params.cleanup-cloudformation)"
-        operator: in
-        values: ["true"]
     runAfter:
       - copy-build-content-in-www
     taskRef:
@@ -202,11 +186,10 @@ spec:
     - name: secrets
       workspace: aws-secrets
   - name: run-cloudformation-for-ui-hosting
-    when:
-      - input: "$(params.cleanup-cloudformation)"
-        operator: in
-        values: ["true"] 
     runAfter:
+      - fetch-deployment-repo
+      - list-deployment-workspace
+      - copy-build-content-in-www
       - cleanup-prior-ui-hosting
     taskRef:
       name: aws-cli
@@ -234,11 +217,11 @@ spec:
     - name: secrets
       workspace: aws-secrets
   - name: run-invalidations-for-ui-hosting
-    when:
-      - input: "$(params.cleanup-cloudformation)"
-        operator: in
-        values: ["false"]
     runAfter:
+      - fetch-deployment-repo
+      - list-deployment-workspace
+      - copy-build-content-in-www
+      - cleanup-prior-ui-hosting
       - run-cloudformation-for-ui-hosting
     taskRef:
       name: aws-cli

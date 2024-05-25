@@ -55,7 +55,7 @@ Resources:
   CustomResourceStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site/9615711e2498cc38875da9690fc23e91.template
+      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-ptr/0552d629ab3ab14c64ceeac28894bcaa.template
       Tags:
       - Key: Solution
         Value: ACFS3
@@ -83,7 +83,7 @@ Resources:
   AcmCertificateStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site/36356fd9dd7f6ab4db15b23ac7be9dc2.template
+      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-ptr/36356fd9dd7f6ab4db15b23ac7be9dc2.template
       Parameters:
         SubDomain:
           Ref: SubDomain
@@ -111,7 +111,7 @@ Resources:
   CloudFrontStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site/133b77372b3c5becaaef784cb8400eb3.template
+      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-ptr/e0ae556cb3bc4e019300216a79bdc2c3.template
       Parameters:
         CertificateArn:
           Fn::GetAtt:
@@ -123,6 +123,8 @@ Resources:
           Ref: SubDomain
         CreateApex:
           Ref: CreateApex
+        HostedZoneId:
+          Ref: HostedZoneId
         S3BucketRoot:
           Fn::GetAtt:
           - CustomResourceStack

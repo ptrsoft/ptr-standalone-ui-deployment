@@ -19,7 +19,7 @@ Resources:
 
   S3BucketLogs:
     Type: AWS::S3::Bucket
-    DeletionPolicy: Retain
+    # DeletionPolicy: Retain
     Properties:
       BucketName : !Sub '${AppkubeDepartment}-${AppkubeProduct}-${AppkubeEnvironment}-${AppkubeService}-log'
             # /papu -The following function to convert lowercase did not work , so we need to make sure that
@@ -52,7 +52,7 @@ Resources:
 
   S3BucketRoot:
     Type: AWS::S3::Bucket
-    DeletionPolicy: Retain
+    # DeletionPolicy: Retain
     Properties:
       BucketName : !Sub '${AppkubeDepartment}-${AppkubeProduct}-${AppkubeEnvironment}-${AppkubeService}-root'
       # /papu -The following function to convert lowercase did not work , so we need to make sure that
