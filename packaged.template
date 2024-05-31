@@ -111,7 +111,7 @@ Resources:
   CloudFrontStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-ptr/e0ae556cb3bc4e019300216a79bdc2c3.template
+      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-ptr/3fa0c3ef9db25b7851b5ac81f62c08c9.template
       Parameters:
         CertificateArn:
           Fn::GetAtt:
@@ -145,6 +145,36 @@ Resources:
           Fn::GetAtt:
           - CustomResourceStack
           - Outputs.S3BucketLogsName
+      Tags:
+      - Key: Solution
+        Value: ACFS3
+      - Key: AppkubeDepartment
+        Value:
+          Ref: AppkubeDepartment
+      - Key: AppkubeProduct
+        Value:
+          Ref: AppkubeProduct
+      - Key: AppkubeEnvironment
+        Value:
+          Ref: AppkubeEnvironment
+      - Key: AppkubeService
+        Value:
+          Ref: AppkubeService
+  Route53Stack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-ptr/54297a6f665a1e4aa5a483914cc202a8.template
+      Parameters:
+        DomainName:
+          Ref: DomainName
+        SubDomain:
+          Ref: SubDomain
+        HostedZoneId:
+          Ref: HostedZoneId
+        CDNDomain:
+          Fn::GetAtt:
+          - CloudFrontStack
+          - Outputs.CloudFrontDomainName
       Tags:
       - Key: Solution
         Value: ACFS3
@@ -203,15 +233,21 @@ Outputs:
       Fn::GetAtt:
       - AcmCertificateStack
       - Outputs.CertificateArn
-  CFDistributionName:
+  CFDistributionId:
     Description: CloudFront distribution
     Value:
       Fn::GetAtt:
       - CloudFrontStack
-      - Outputs.CloudFrontDistribution
+      - Outputs.CloudFrontId
   CloudFrontDomainName:
     Description: Website address
     Value:
       Fn::GetAtt:
       - CloudFrontStack
       - Outputs.CloudFrontDomainName
+  Website:
+    Description: Website address
+    Value:
+      Fn::GetAtt:
+      - Route53Stack
+      - Outputs.Website

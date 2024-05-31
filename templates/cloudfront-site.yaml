@@ -162,10 +162,9 @@ Resources:
               Override: true
               Protection: true
 Outputs:
-  CloudFrontDistribution:
+  CloudFrontId:
+    Description: CloudFront distribution Id
+    Value: !GetAtt CloudFrontDistribution.Id
+  CloudFrontDomainName:
     Description: CloudFront distribution
     Value: !GetAtt CloudFrontDistribution.DomainName
-
-  CloudFrontDomainName:
-    Description: Website address
-    Value: !Sub '${SubDomain}.${DomainName}'

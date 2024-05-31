@@ -131,6 +131,28 @@ Resources:
         - Key: AppkubeService
           Value: !Ref AppkubeService
 
+  Route53Stack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: templates/route53-update.yaml
+      # DisableRollback: true
+      Parameters:
+        DomainName: !Ref DomainName
+        SubDomain: !Ref SubDomain
+        HostedZoneId: !Ref HostedZoneId
+        CDNDomain: !GetAtt CloudFrontStack.Outputs.CloudFrontDomainName
+      Tags:
+        - Key: Solution
+          Value: ACFS3
+        - Key: AppkubeDepartment
+          Value: !Ref AppkubeDepartment
+        - Key: AppkubeProduct
+          Value: !Ref AppkubeProduct
+        - Key: AppkubeEnvironment
+          Value: !Ref AppkubeEnvironment
+        - Key: AppkubeService
+          Value: !Ref AppkubeService
+
 Outputs:
   SolutionVersion:
     Value: !FindInMap [Solution, Constants, Version]
@@ -152,9 +174,12 @@ Outputs:
   CertificateArn:
     Description: Issued certificate
     Value: !GetAtt AcmCertificateStack.Outputs.CertificateArn
-  CFDistributionName:
+  CFDistributionId:
     Description: CloudFront distribution
-    Value: !GetAtt CloudFrontStack.Outputs.CloudFrontDistribution
+    Value: !GetAtt CloudFrontStack.Outputs.CloudFrontId
   CloudFrontDomainName:
     Description: Website address
     Value: !GetAtt CloudFrontStack.Outputs.CloudFrontDomainName
+  Website:
+    Description: Website address
+    Value: !GetAtt Route53Stack.Outputs.Website
