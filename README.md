@@ -99,3 +99,4 @@ aws s3 rm s3://ops-ptrcloud-prod-ui-root --recursive
 aws s3api delete-bucket --bucket ops-ptrcloud-prod-ui-root
 aws s3api delete-bucket --bucket ops-ptrcloud-prod-ui-log
 
+## deploying any UI with this scripted automation
