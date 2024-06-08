@@ -11,4 +11,5 @@ general:
   domain: ptrtechnology.com
   subdomain: ptrcloud
   hostedzoneid: Z06401662L0WAGUZJFQOF
+  onlyupdate: false
 

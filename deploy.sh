@@ -81,6 +81,7 @@ if [ -n $configfile ]; then
     domain=$(yq eval '.general.domain' config.yaml)
     subdomain=$(yq eval '.general.subdomain' config.yaml)
     hostedzoneid=$(yq eval '.general.hostedzoneid' config.yaml)
+    onlyupdate=$(yq eval '.general.onlyupdate' config.yaml)
 else
     ## parse App app_tags
     AppkubeDepartment=$(echo "${app_tags}" | awk -F ':' '{print $1}')
@@ -91,17 +92,19 @@ fi
 
 buildui() {
     echo "using configs from config file"
+    clean-checkout-folder 2>/dev/null>&1
     git clone $1 checkout
     pushd checkout && npm install && npm run build && pushd +1
 }
 
 clean-www-folder() {
-    pushd www && rm -rv !("403.html"|"404.html") && pushd +1
+    rm -rf www/* 
 }
 ## copy the build folder contents in www folder
 copy-ui-build-in-www() {
     echo "copying build folder contents from build to www"
     cp -r checkout/build/* www/
+    cp -r error-pages/* www/
     echo "www folder contents after build"
     ls -a www/
 }
@@ -157,6 +160,14 @@ rebuild-stack() {
 fi
 }
 
+isonlyupdate() {
+  if [[ "$onlyupdate" == "true" ]]; then
+    true
+  else
+    false
+fi
+}
+
 # Function to delete the stack
 delete-stack() {
     aws cloudformation delete-stack --stack-name $1 --output text 2>/dev/null
@@ -195,11 +206,15 @@ build-cloudformation-script-package() {
     aws --region us-east-1 cloudformation package \
     --template-file main.yaml \
     --s3-bucket cf-static-secure-site-ptr \
-    --output-template-file packaged.template
+    --output-template-file packaged.template >/dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo "Building cloudformation package failed"
+        exit 1
+    fi
 }
 
 deploy-with-cloudformation-script() {
-    aws cloudformation validate-template --template-body file://packaged.template
+    aws cloudformation validate-template --template-body file://packaged.template >/dev/null 2>&1
     if [ $? -ne 0 ]; then
         echo "template validation failed"
         exit 1
@@ -207,11 +222,23 @@ deploy-with-cloudformation-script() {
     echo "starting the main cloudformation script deployment"
 
     aws --region us-east-1 cloudformation deploy \
-        --stack-name ops-appkube-ptrcloud-ui \
+        --stack-name $1 \
         --template-file  packaged.template \
         --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
         --parameter-overrides  DomainName="$domain" SubDomain="$subdomain"  HostedZoneId="$hostedzoneid" \
         AppkubeDepartment=$AppkubeDepartment AppkubeProduct=$AppkubeProduct AppkubeEnvironment=$AppkubeEnvironment AppkubeService=$AppkubeService 
+}
+
+updates3andrefreshcdn() {
+    S3BucketRoot=$(aws cloudformation describe-stacks --stack-name $1 --query 'Stacks[0].Outputs[?OutputKey==`S3BucketRoot`].OutputValue' --output text)
+    aws s3 sync build s3://$S3BucketRoot --delete
+          echo "aws cloudfront invalidatation"
+          export cloudfrontid=$(aws cloudfront list-distributions --query 'DistributionList.Items[?Aliases.Items[?contains(@, `appkube.synectiks.net`)]].Id' --output text)
+          echo cloudfrontid: $cloudfrontid
+          invalidation_output=$(aws cloudfront create-invalidation --distribution-id $cloudfrontid --paths "/*")
+          invalidation_id=$(echo $invalidation_output | grep -oP '(?<="Id": ")[^"]*' | cut -d'"' -f1)      
+          aws cloudfront wait invalidation-completed --distribution-id $cloudfrontid --id $invalidation_id
+          echo Invalidation completed, Invalidation ID: $invalidation_id
 }
 
 echo "configfile: $configfile"
@@ -225,13 +252,22 @@ echo "Remaining arguments: $@"
 
 STACK_NAME="$AppkubeDepartment-$AppkubeProduct-$AppkubeEnvironment-$AppkubeService"
 echo "stack name formed is : $STACK_NAME "
-# delete-existing-stack-if-user-requests $STACK_NAME
-# buildui $repo
-clean-www-folder
-copy-ui-build-in-www
-clean-checkout-folder
-build-cloudformation-script-package
-deploy-with-cloudformation-script STACK_NAME
+if  isonlyupdate; then 
+    echo "doing onlyupdate"
+    buildui $repo
+    clean-www-folder
+    copy-ui-build-in-www
+    clean-checkout-folder
+    updates3andrefreshcdn
+else 
+    delete-existing-stack-if-user-requests $STACK_NAME
+    buildui $repo
+    clean-www-folder
+    copy-ui-build-in-www
+    clean-checkout-folder
+    build-cloudformation-script-package
+    deploy-with-cloudformation-script $STACK_NAME
+fi
 
 
 
