@@ -302,32 +302,32 @@ echo "Remaining arguments: $@"
 
 STACK_NAME="$AppkubeDepartment-$AppkubeProduct-$AppkubeEnvironment-$AppkubeService"
 echo "stack name formed is : $STACK_NAME "
-# if  isonlyupdate; then 
-#     echo "doing onlyupdate"
-#     if ! (ispurehtmlcsspages);then
-#         buildui "$repo"
-#     else 
-#         checkout "$repo"
-#     fi
-#     clean-www-folder
-#     copy-ui-build-in-www
-#     clean-checkout-folder
-#     updates3andrefreshcdn "$STACK_NAME"
-# else 
-#     delete-existing-stack-if-user-requests "$STACK_NAME"
-#     if ! (ispurehtmlcsspages);then
-#         echo "doing complete ui build"
-#         buildui "$repo"
-#     else 
-#         echo "doing only checkout of repo"
-#         checkout "$repo"
-#     fi
-#     clean-www-folder
-#     copy-ui-build-in-www
-#     clean-checkout-folder
-#     build-cloudformation-script-package
-#     deploy-with-cloudformation-script "$STACK_NAME"
-#     ## sometime CF script dont copt the www contents , so added extra steps
-#     updates3andrefreshcdn "$STACK_NAME"
-# fi
+if  isonlyupdate; then 
+    echo "doing onlyupdate"
+    if ! (ispurehtmlcsspages);then
+        buildui "$repo"
+    else 
+        checkout "$repo"
+    fi
+    clean-www-folder
+    copy-ui-build-in-www
+    clean-checkout-folder
+    updates3andrefreshcdn "$STACK_NAME"
+else 
+    delete-existing-stack-if-user-requests "$STACK_NAME"
+    if ! (ispurehtmlcsspages);then
+        echo "doing complete ui build"
+        buildui "$repo"
+    else 
+        echo "doing only checkout of repo"
+        checkout "$repo"
+    fi
+    clean-www-folder
+    copy-ui-build-in-www
+    clean-checkout-folder
+    build-cloudformation-script-package
+    deploy-with-cloudformation-script "$STACK_NAME"
+    ## sometime CF script dont copt the www contents , so added extra steps
+    updates3andrefreshcdn "$STACK_NAME"
+fi
 updatecmdb "$STACK_NAME"
