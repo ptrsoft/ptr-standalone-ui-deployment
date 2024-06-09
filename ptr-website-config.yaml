@@ -1,16 +1,16 @@
 apptags:
   department: ops
-  product: ptrcloud
+  product: ptrwebsite
   environment: prod
-  service: ui
+  service: webui
 git:
-  repo: https://github.com/ptrsoft/ptr-standalone-ui.git
+  repo: https://github.com/ptrsoft/ptr-website.git
   tag:  main
 general:
   rebuild-stack: false
   domain: ptrtechnology.com
-  subdomain: ptrcloud
+  subdomain: web
   hostedzoneid: Z06401662L0WAGUZJFQOF
-  onlyupdate: true
-  purestaticpages: false
+  onlyupdate: false
+  purestaticpages: true
 

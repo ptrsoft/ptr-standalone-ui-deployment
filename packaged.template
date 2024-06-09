@@ -55,7 +55,7 @@ Resources:
   CustomResourceStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-ptr/0f3205ae585a2d4566a0b4784be8403c.template
+      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-ptr/0da90b4e7acd9beef86ffdc75613e2db.template
       Tags:
       - Key: Solution
         Value: ACFS3

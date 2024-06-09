@@ -100,3 +100,12 @@ aws s3api delete-bucket --bucket ops-ptrcloud-prod-ui-root
 aws s3api delete-bucket --bucket ops-ptrcloud-prod-ui-log
 
 ## deploying any UI with this scripted automation
+
+Now we have made this script a generic to deploy any UI , given the UI repo location. To deploy the UI, you need to pass on the deployment config to a config.yaml. A example config.yaml is given.
+To deploy
+./depoly.sh -c config.yaml.
+
+For example , for ptr website deployment , we added ptr-website-config.yaml.
+To deploy the ptr-website , all u need to do is
+
+./depoly.sh -c ptr-website-config.yaml.

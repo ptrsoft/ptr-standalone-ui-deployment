@@ -49,6 +49,7 @@ rebuildstack=""
 domain=""
 subdomain=""
 hostedzoneid=""
+purehtmlcsspages=""
 ## parse the arguments 
 while true; do
     case "$1" in
@@ -71,17 +72,18 @@ done
 if [ -n $configfile ]; then
     echo "using configs from config file"
   # Read the YAML file using yq
-    AppkubeDepartment=$(yq eval '.apptags.department' config.yaml)
-    AppkubeProduct=$(yq eval '.apptags.product' config.yaml)
-    AppkubeEnvironment=$(yq eval '.apptags.environment' config.yaml)
-    AppkubeService=$(yq eval '.apptags.service' config.yaml) 
-    repo=$(yq eval '.git.repo' config.yaml)
-    git_tag=$(yq eval '.git.tag' config.yaml)
-    rebuildstack=$(yq eval '.general.rebuild-stack' config.yaml)
-    domain=$(yq eval '.general.domain' config.yaml)
-    subdomain=$(yq eval '.general.subdomain' config.yaml)
-    hostedzoneid=$(yq eval '.general.hostedzoneid' config.yaml)
-    onlyupdate=$(yq eval '.general.onlyupdate' config.yaml)
+    AppkubeDepartment=$(yq eval '.apptags.department' $configfile)
+    AppkubeProduct=$(yq eval '.apptags.product' $configfile)
+    AppkubeEnvironment=$(yq eval '.apptags.environment' $configfile)
+    AppkubeService=$(yq eval '.apptags.service' $configfile) 
+    repo=$(yq eval '.git.repo' $configfile)
+    git_tag=$(yq eval '.git.tag' $configfile)
+    rebuildstack=$(yq eval '.general.rebuild-stack' $configfile)
+    domain=$(yq eval '.general.domain' $configfile)
+    subdomain=$(yq eval '.general.subdomain' $configfile)
+    hostedzoneid=$(yq eval '.general.hostedzoneid' $configfile)
+    onlyupdate=$(yq eval '.general.onlyupdate' $configfile)
+    purehtmlcsspages=$(yq eval '.general.purestaticpages' $configfile)
 else
     ## parse App app_tags
     AppkubeDepartment=$(echo "${app_tags}" | awk -F ':' '{print $1}')
@@ -93,17 +95,31 @@ fi
 buildui() {
     echo "using configs from config file"
     clean-checkout-folder 2>/dev/null>&1
-    git clone $1 checkout
+    git clone "$1" checkout
     pushd checkout && npm install && npm run build && pushd +1
 }
+
+checkout() {
+    echo "using configs from config file"
+    echo "cleaning existing checkout folder"
+    clean-checkout-folder 2>/dev/null>&1
+    echo "cloning source to checkout folder"
+    git clone "$1" checkout
+}
+
 
 clean-www-folder() {
     rm -rf www/* 
 }
-## copy the build folder contents in www folder
+## copy the build outcome folder contents in www folder
 copy-ui-build-in-www() {
-    echo "copying build folder contents from build to www"
-    cp -r checkout/build/* www/
+    if ispurehtmlcsspages;then
+        echo "copying root folder contents from checkout to www"
+        cp -r checkout/* www/
+    else
+        echo "copying build folder contents from build to www"
+        cp -r checkout/build/* www/
+    fi
     cp -r error-pages/* www/
     echo "www folder contents after build"
     ls -a www/
@@ -128,24 +144,24 @@ check-existing-stack() {
 
 clean-existing-buckets() {
     echo "cleaning the root and log bucket of the stack"
-    S3BucketRoot=$(aws cloudformation describe-stacks --stack-name $1 --query 'Stacks[0].Outputs[?OutputKey==`S3BucketRoot`].OutputValue' --output text)
-    S3BucketLogs=$(aws cloudformation describe-stacks --stack-name $1 --query 'Stacks[0].Outputs[?OutputKey==`S3BucketLogs`].OutputValue' --output text)
-    aws s3 rm s3://$S3BucketRoot --recursive
-    aws s3 rm s3://$S3BucketLogs --recursive
-    aws s3api delete-bucket --bucket $S3BucketRoot
-    aws s3api delete-bucket --bucket $S3BucketLogs
+    S3BucketRoot=$(aws cloudformation describe-stacks --stack-name "$1" --query 'Stacks[0].Outputs[?OutputKey==`S3BucketRoot`].OutputValue' --output text)
+    S3BucketLogs=$(aws cloudformation describe-stacks --stack-name "$1" --query 'Stacks[0].Outputs[?OutputKey==`S3BucketLogs`].OutputValue' --output text)
+    aws s3 rm s3://"$S3BucketRoot" --recursive
+    aws s3 rm s3://"$S3BucketLogs" --recursive
+    aws s3api delete-bucket --bucket "$S3BucketRoot"
+    aws s3api delete-bucket --bucket "$S3BucketLogs"
 }
 # function to delete the existing stack if user requests so
 delete-existing-stack-if-user-requests() {
         # existing=$(check-existing-stack $1)
         # echo "existing variable value : $existing "
-        if check-existing-stack $1; then
+        if check-existing-stack "$1"; then
             echo "stack exist with the name"
             if rebuild-stack; then
                 echo "deleting the stack"
-                clean-existing-buckets $1 
-                delete-stack $1
-                keep-waiting-until-stack-deleted $1
+                clean-existing-buckets "$1" 
+                delete-stack "$1"
+                keep-waiting-until-stack-deleted "$1"
             fi
         else
             echo "stack does not exist with the name: $1"
@@ -162,6 +178,14 @@ fi
 
 isonlyupdate() {
   if [[ "$onlyupdate" == "true" ]]; then
+    true
+  else
+    false
+fi
+}
+
+ispurehtmlcsspages() {
+  if [[ "$purehtmlcsspages" == "true" ]]; then
     true
   else
     false
@@ -216,17 +240,17 @@ deploy-with-cloudformation-script() {
     echo "starting the main cloudformation script deployment"
 
     aws --region us-east-1 cloudformation deploy \
-        --stack-name $1 \
+        --stack-name "$1" \
         --template-file  packaged.template \
         --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
         --parameter-overrides  DomainName="$domain" SubDomain="$subdomain"  HostedZoneId="$hostedzoneid" \
-        AppkubeDepartment=$AppkubeDepartment AppkubeProduct=$AppkubeProduct AppkubeEnvironment=$AppkubeEnvironment AppkubeService=$AppkubeService 
+        AppkubeDepartment="$AppkubeDepartment" AppkubeProduct="$AppkubeProduct" AppkubeEnvironment="$AppkubeEnvironment" AppkubeService="$AppkubeService" 
 }
 
 updates3andrefreshcdn() {
     echo "Getting root bucket"
 
-    S3BucketRoot=$(aws cloudformation describe-stacks --stack-name $1 \
+    S3BucketRoot=$(aws cloudformation describe-stacks --stack-name "$1" \
     --query 'Stacks[0].Outputs[?OutputKey==`S3BucketRoot`].OutputValue' \
     --output text 2>/dev/null>&1)
 
@@ -242,18 +266,22 @@ updates3andrefreshcdn() {
 
     echo "Synching root bucket"
 
-    aws s3 sync www s3://$S3BucketRoot --delete >/dev/null 2>&1
+    aws s3 sync www s3://"$S3BucketRoot" --delete >/dev/null 2>&1
     
     iferror "could not sync root bucket"
 
     echo "Doing cloudfront invalidatation"
     
-    invalidation_output=$(aws cloudfront create-invalidation --distribution-id $CFDistributionId --paths "/*" >/dev/null 2>&1)
-    invalidation_id=$(echo $invalidation_output | grep -oP '(?<="Id": ")[^"]*' | cut -d'"' -f1)
+    invalidation_output=$(aws cloudfront create-invalidation --distribution-id "$CFDistributionId" --paths "/*" >/dev/null 2>&1)
+    invalidation_id=$(echo "$invalidation_output" | grep -oP '(?<="Id": ")[^"]*' | cut -d'"' -f1)
 
     echo "Waiting for invalidatation"      
-    aws cloudfront wait invalidation-completed --distribution-id $CFDistributionId --id $invalidation_id >/dev/null 2>&1
+    aws cloudfront wait invalidation-completed --distribution-id "$CFDistributionId" --id "$invalidation_id" >/dev/null 2>&1
     echo "Invalidation completed, Invalidation ID: $invalidation_id"
+}
+updatecmdb() {
+    aws cloudformation describe-stacks --stack-name "$1" --query 'Stacks[0].Outputs[].[OutputKey,OutputValue]' --output json > output.json
+    aws cloudformation describe-stacks --stack-name "$1" --query 'Stacks[0].Outputs[].[OutputKey,OutputValue]' --output table 
 }
 
 iferror() {
@@ -274,22 +302,32 @@ echo "Remaining arguments: $@"
 
 STACK_NAME="$AppkubeDepartment-$AppkubeProduct-$AppkubeEnvironment-$AppkubeService"
 echo "stack name formed is : $STACK_NAME "
-if  isonlyupdate; then 
-    echo "doing onlyupdate"
-    buildui $repo
-    clean-www-folder
-    copy-ui-build-in-www
-    clean-checkout-folder
-    updates3andrefreshcdn $STACK_NAME
-else 
-    delete-existing-stack-if-user-requests $STACK_NAME
-    buildui $repo
-    clean-www-folder
-    copy-ui-build-in-www
-    clean-checkout-folder
-    build-cloudformation-script-package
-    deploy-with-cloudformation-script $STACK_NAME
-fi
-
-
-
+# if  isonlyupdate; then 
+#     echo "doing onlyupdate"
+#     if ! (ispurehtmlcsspages);then
+#         buildui "$repo"
+#     else 
+#         checkout "$repo"
+#     fi
+#     clean-www-folder
+#     copy-ui-build-in-www
+#     clean-checkout-folder
+#     updates3andrefreshcdn "$STACK_NAME"
+# else 
+#     delete-existing-stack-if-user-requests "$STACK_NAME"
+#     if ! (ispurehtmlcsspages);then
+#         echo "doing complete ui build"
+#         buildui "$repo"
+#     else 
+#         echo "doing only checkout of repo"
+#         checkout "$repo"
+#     fi
+#     clean-www-folder
+#     copy-ui-build-in-www
+#     clean-checkout-folder
+#     build-cloudformation-script-package
+#     deploy-with-cloudformation-script "$STACK_NAME"
+#     ## sometime CF script dont copt the www contents , so added extra steps
+#     updates3andrefreshcdn "$STACK_NAME"
+# fi
+updatecmdb "$STACK_NAME"
