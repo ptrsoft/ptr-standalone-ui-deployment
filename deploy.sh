@@ -171,10 +171,7 @@ fi
 # Function to delete the stack
 delete-stack() {
     aws cloudformation delete-stack --stack-name $1 --output text 2>/dev/null
-    if [ $? -ne 0 ]; then
-        # If describe-stacks fails, it likely means the stack has been deleted
-        echo "Delete Stack Api faile for some unknown reason"
-    fi
+    iferror "Delete Stack Api faile for some unknown reason"
 }
 
 # Function to check the stack status
@@ -207,18 +204,15 @@ build-cloudformation-script-package() {
     --template-file main.yaml \
     --s3-bucket cf-static-secure-site-ptr \
     --output-template-file packaged.template >/dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Building cloudformation package failed"
-        exit 1
-    fi
+
+    iferror "Building cloudformation package failed"
 }
 
 deploy-with-cloudformation-script() {
     aws cloudformation validate-template --template-body file://packaged.template >/dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "template validation failed"
-        exit 1
-    fi
+
+    iferror "template validation failed"
+ 
     echo "starting the main cloudformation script deployment"
 
     aws --region us-east-1 cloudformation deploy \
@@ -230,15 +224,43 @@ deploy-with-cloudformation-script() {
 }
 
 updates3andrefreshcdn() {
-    S3BucketRoot=$(aws cloudformation describe-stacks --stack-name $1 --query 'Stacks[0].Outputs[?OutputKey==`S3BucketRoot`].OutputValue' --output text)
-    aws s3 sync build s3://$S3BucketRoot --delete
-          echo "aws cloudfront invalidatation"
-          export cloudfrontid=$(aws cloudfront list-distributions --query 'DistributionList.Items[?Aliases.Items[?contains(@, `appkube.synectiks.net`)]].Id' --output text)
-          echo cloudfrontid: $cloudfrontid
-          invalidation_output=$(aws cloudfront create-invalidation --distribution-id $cloudfrontid --paths "/*")
-          invalidation_id=$(echo $invalidation_output | grep -oP '(?<="Id": ")[^"]*' | cut -d'"' -f1)      
-          aws cloudfront wait invalidation-completed --distribution-id $cloudfrontid --id $invalidation_id
-          echo Invalidation completed, Invalidation ID: $invalidation_id
+    echo "Getting root bucket"
+
+    S3BucketRoot=$(aws cloudformation describe-stacks --stack-name $1 \
+    --query 'Stacks[0].Outputs[?OutputKey==`S3BucketRoot`].OutputValue' \
+    --output text 2>/dev/null>&1)
+
+    iferror "could not fetch root bucket"
+
+    echo "Getting CloudFront Distribution Id"
+
+    CFDistributionId=$(aws cloudformation describe-stacks --stack-name "$1" \
+    --query 'Stacks[0].Outputs[?OutputKey==`CFDistributionId`].OutputValue' \
+    --output text 2>/dev/null>&1)
+
+    iferror "could not fetch cloud front ditribution id"
+
+    echo "Synching root bucket"
+
+    aws s3 sync www s3://$S3BucketRoot --delete >/dev/null 2>&1
+    
+    iferror "could not sync root bucket"
+
+    echo "Doing cloudfront invalidatation"
+    
+    invalidation_output=$(aws cloudfront create-invalidation --distribution-id $CFDistributionId --paths "/*" >/dev/null 2>&1)
+    invalidation_id=$(echo $invalidation_output | grep -oP '(?<="Id": ")[^"]*' | cut -d'"' -f1)
+
+    echo "Waiting for invalidatation"      
+    aws cloudfront wait invalidation-completed --distribution-id $CFDistributionId --id $invalidation_id >/dev/null 2>&1
+    echo "Invalidation completed, Invalidation ID: $invalidation_id"
+}
+
+iferror() {
+    if [ $? -ne 0 ]; then
+        echo "$1"
+        exit 1
+    fi
 }
 
 echo "configfile: $configfile"
@@ -258,7 +280,7 @@ if  isonlyupdate; then
     clean-www-folder
     copy-ui-build-in-www
     clean-checkout-folder
-    updates3andrefreshcdn
+    updates3andrefreshcdn $STACK_NAME
 else 
     delete-existing-stack-if-user-requests $STACK_NAME
     buildui $repo

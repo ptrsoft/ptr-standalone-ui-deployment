@@ -7,9 +7,9 @@ git:
   repo: https://github.com/ptrsoft/ptr-standalone-ui.git
   tag:  main
 general:
-  rebuild-stack: true
+  rebuild-stack: false
   domain: ptrtechnology.com
   subdomain: ptrcloud
   hostedzoneid: Z06401662L0WAGUZJFQOF
-  onlyupdate: false
+  onlyupdate: true
 
