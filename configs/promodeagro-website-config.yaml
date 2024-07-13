@@ -1,0 +1,18 @@
+apptags:
+  department: promodeagro
+  product: website
+  environment: prod
+  service: ui
+git:
+  repo: https://github.com/promodeagro/promodeagro-ecommerce-pwa.git
+  tag:  main
+general:
+  organization: promodeagro
+  rebuild-stack: false
+  domain: promodeagro.com
+  subdomain: 
+  hostedzoneid: Z00062013820EO6BYULDB
+  onlyupdate: false
+  purestaticpages: false
+  apexdomain: yes
+

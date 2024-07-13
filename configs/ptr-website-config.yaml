@@ -1,16 +1,18 @@
 apptags:
-  department: ops
-  product: ptrwebsite
+  department: ptrtechnology
+  product: website
   environment: prod
-  service: webui
+  service: ui
 git:
   repo: https://github.com/ptrsoft/ptr-website.git
   tag:  main
 general:
+  organization: ptr
   rebuild-stack: false
   domain: ptrtechnology.com
-  subdomain: web
+  subdomain: 
   hostedzoneid: Z06401662L0WAGUZJFQOF
   onlyupdate: false
-  purestaticpages: true
+  purestaticpages: false
+  apexdomain: yes
 

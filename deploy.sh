@@ -46,10 +46,12 @@ repo=""
 git_tag=""
 app_tags=""
 rebuildstack=""
+organization=""
 domain=""
 subdomain=""
 hostedzoneid=""
 purehtmlcsspages=""
+IsApexDomain=""
 ## parse the arguments 
 while true; do
     case "$1" in
@@ -84,6 +86,9 @@ if [ -n $configfile ]; then
     hostedzoneid=$(yq eval '.general.hostedzoneid' $configfile)
     onlyupdate=$(yq eval '.general.onlyupdate' $configfile)
     purehtmlcsspages=$(yq eval '.general.purestaticpages' $configfile)
+    IsApexDomain=$(yq eval '.general.apexdomain' $configfile)
+    organization=$(yq eval '.general.organization' $configfile)
+
 else
     ## parse App app_tags
     AppkubeDepartment=$(echo "${app_tags}" | awk -F ':' '{print $1}')
@@ -132,7 +137,7 @@ clean-checkout-folder() {
 }
 
 check-existing-stack() {
-    aws cloudformation list-stacks --no-paginate --output json --stack-status-filter "CREATE_COMPLETE" "UPDATE_COMPLETE"   --query 'StackSummaries[*].StackName' | grep $1 > /dev/null
+    aws cloudformation list-stacks --no-paginate --output json --stack-status-filter "CREATE_COMPLETE" "UPDATE_COMPLETE" "ROLLBACK_COMPLETE" "ROLLBACK_FAILED" "DELETE_FAILED" --query 'StackSummaries[*].StackName' | grep $1 > /dev/null
     if [ $? -eq 0 ]; then
         true
     else
@@ -146,17 +151,20 @@ clean-existing-buckets() {
     echo "cleaning the root and log bucket of the stack"
     S3BucketRoot=$(aws cloudformation describe-stacks --stack-name "$1" --query 'Stacks[0].Outputs[?OutputKey==`S3BucketRoot`].OutputValue' --output text)
     S3BucketLogs=$(aws cloudformation describe-stacks --stack-name "$1" --query 'Stacks[0].Outputs[?OutputKey==`S3BucketLogs`].OutputValue' --output text)
-    aws s3 rm s3://"$S3BucketRoot" --recursive
-    aws s3 rm s3://"$S3BucketLogs" --recursive
-    aws s3api delete-bucket --bucket "$S3BucketRoot"
-    aws s3api delete-bucket --bucket "$S3BucketLogs"
+    # aws s3 rm s3://"$S3BucketRoot" --recursive
+    # aws s3 rm s3://"$S3BucketLogs" --recursive
+    # aws s3api delete-bucket --bucket "$S3BucketRoot"
+    # aws s3api delete-bucket --bucket "$S3BucketLogs"
+    aws s3 rb s3://"$S3BucketRoot" --force
+    aws s3 rb s3://"$S3BucketLogs" --force
 }
 # function to delete the existing stack if user requests so
 delete-existing-stack-if-user-requests() {
         # existing=$(check-existing-stack $1)
         # echo "existing variable value : $existing "
+        echo "entering existing stack delete section"
         if check-existing-stack "$1"; then
-            echo "stack exist with the name"
+            echo "stack exist with the name: "$1""
             if rebuild-stack; then
                 echo "deleting the stack"
                 clean-existing-buckets "$1" 
@@ -226,7 +234,7 @@ keep-waiting-until-stack-deleted(){
 build-cloudformation-script-package() {
     aws --region us-east-1 cloudformation package \
     --template-file main.yaml \
-    --s3-bucket cf-static-secure-site-ptr \
+    --s3-bucket cf-static-secure-site-"$organization" \
     --output-template-file packaged.template >/dev/null 2>&1
 
     iferror "Building cloudformation package failed"
@@ -244,7 +252,8 @@ deploy-with-cloudformation-script() {
         --template-file  packaged.template \
         --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
         --parameter-overrides  DomainName="$domain" SubDomain="$subdomain"  HostedZoneId="$hostedzoneid" \
-        AppkubeDepartment="$AppkubeDepartment" AppkubeProduct="$AppkubeProduct" AppkubeEnvironment="$AppkubeEnvironment" AppkubeService="$AppkubeService" 
+        AppkubeDepartment="$AppkubeDepartment" AppkubeProduct="$AppkubeProduct" AppkubeEnvironment="$AppkubeEnvironment" \
+        AppkubeService="$AppkubeService" CreateApex="$IsApexDomain"
 }
 
 updates3andrefreshcdn() {
@@ -298,10 +307,14 @@ echo "AppkubeDepartment Value: $AppkubeDepartment"
 echo "AppkubeProduct Value: $AppkubeProduct"
 echo "AppkubeEnvironment Value: $AppkubeEnvironment"
 echo "AppkubeService Value: $AppkubeService"
+echo "Create Apex Domain Value: $IsApexDomain"
 echo "Remaining arguments: $@"
 
 STACK_NAME="$AppkubeDepartment-$AppkubeProduct-$AppkubeEnvironment-$AppkubeService"
 echo "stack name formed is : $STACK_NAME "
+## cleaning stack beforehand if requested by user , because UI build takes more time and user simply complete UI build and then fail
+delete-existing-stack-if-user-requests "$STACK_NAME"
+
 if  isonlyupdate; then 
     echo "doing onlyupdate"
     if ! (ispurehtmlcsspages);then
@@ -314,7 +327,6 @@ if  isonlyupdate; then
     clean-checkout-folder
     updates3andrefreshcdn "$STACK_NAME"
 else 
-    delete-existing-stack-if-user-requests "$STACK_NAME"
     if ! (ispurehtmlcsspages);then
         echo "doing complete ui build"
         buildui "$repo"

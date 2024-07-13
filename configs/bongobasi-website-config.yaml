@@ -1,0 +1,18 @@
+apptags:
+  department: bongobasi
+  product: website
+  environment: prod
+  service: ui
+git:
+  repo: https://github.com/promodeagro/promodeagro-ecommerce-pwa.git
+  tag:  main
+general:
+  organization: promodeagro
+  rebuild-stack: false
+  domain: bongobasi.com
+  subdomain: 
+  hostedzoneid: Z06226113951R8W1TLGZ0
+  onlyupdate: false
+  purestaticpages: false
+  apexdomain: yes
+

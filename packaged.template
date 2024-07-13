@@ -55,7 +55,7 @@ Resources:
   CustomResourceStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-ptr/0da90b4e7acd9beef86ffdc75613e2db.template
+      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-ptr/21e86c6332ca83fe9330429dee665eac.template
       Tags:
       - Key: Solution
         Value: ACFS3
@@ -83,7 +83,7 @@ Resources:
   AcmCertificateStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-ptr/36356fd9dd7f6ab4db15b23ac7be9dc2.template
+      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-ptr/61198ec2a1c9ebcbe5cea1959b7fcaff.template
       Parameters:
         SubDomain:
           Ref: SubDomain
@@ -111,7 +111,7 @@ Resources:
   CloudFrontStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-ptr/3fa0c3ef9db25b7851b5ac81f62c08c9.template
+      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-ptr/aebb16d2302695ff1fa1266a5bfee44e.template
       Parameters:
         CertificateArn:
           Fn::GetAtt:
@@ -145,36 +145,6 @@ Resources:
           Fn::GetAtt:
           - CustomResourceStack
           - Outputs.S3BucketLogsName
-      Tags:
-      - Key: Solution
-        Value: ACFS3
-      - Key: AppkubeDepartment
-        Value:
-          Ref: AppkubeDepartment
-      - Key: AppkubeProduct
-        Value:
-          Ref: AppkubeProduct
-      - Key: AppkubeEnvironment
-        Value:
-          Ref: AppkubeEnvironment
-      - Key: AppkubeService
-        Value:
-          Ref: AppkubeService
-  Route53Stack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-ptr/54297a6f665a1e4aa5a483914cc202a8.template
-      Parameters:
-        DomainName:
-          Ref: DomainName
-        SubDomain:
-          Ref: SubDomain
-        HostedZoneId:
-          Ref: HostedZoneId
-        CDNDomain:
-          Fn::GetAtt:
-          - CloudFrontStack
-          - Outputs.CloudFrontDomainName
       Tags:
       - Key: Solution
         Value: ACFS3
@@ -245,9 +215,3 @@ Outputs:
       Fn::GetAtt:
       - CloudFrontStack
       - Outputs.CloudFrontDomainName
-  Website:
-    Description: Website address
-    Value:
-      Fn::GetAtt:
-      - Route53Stack
-      - Outputs.Website

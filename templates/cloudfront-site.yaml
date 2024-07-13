@@ -58,8 +58,14 @@ Resources:
     Properties:
       DistributionConfig:
         Aliases:
-          - !Sub '${SubDomain}.${DomainName}'
-          - !If [ CreateApexConfig, !Ref DomainName, !Ref 'AWS::NoValue' ]
+          - !Sub '${DomainName}'
+          - !Sub 'www.${DomainName}'
+          # Fn::If:
+          #   - CreateApexConfig
+          #   - !Sub '${DomainName}'
+          #   - !Sub '${SubDomain}.${DomainName}'
+          # - !Sub '${SubDomain}.${DomainName}'
+          # - !If [ CreateApexConfig, !Ref DomainName, !Ref 'AWS::NoValue' ]
         DefaultCacheBehavior:
           Compress: true
           DefaultTTL: 86400

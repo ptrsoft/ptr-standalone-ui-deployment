@@ -21,20 +21,23 @@ Resources:
   Certificate:
     Type: AWS::CertificateManager::Certificate
     Properties:
-      DomainName: !Sub '${SubDomain}.${DomainName}'
+      DomainName: 
+        Fn::If:
+            - CreateApexConfig
+            - !Sub '${DomainName}'
+            - !Sub '${SubDomain}.${DomainName}'      
       SubjectAlternativeNames:
         Fn::If:
           - CreateApexConfig
-          - - Ref: DomainName
+          - !Split [",",!Sub 'www.${DomainName}']
           - Ref: AWS::NoValue
-      DomainValidationOptions:
-        - DomainName: !Sub '${SubDomain}.${DomainName}'
-          HostedZoneId: !Ref HostedZoneId
-        - Fn::If:
-          - CreateApexConfig
-          - DomainName: !Ref DomainName
-            HostedZoneId: !Ref HostedZoneId
-          - Ref: AWS::NoValue
+      # DomainValidationOptions:
+      #   DomainName: 
+      #     Fn::If:
+      #       - CreateApexConfig
+      #       - !Sub '${DomainName}'
+      #       - !Sub '${SubDomain}.${DomainName}'      
+      #   HostedZoneId: !Ref HostedZoneId
       ValidationMethod: DNS
 
 Outputs:

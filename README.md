@@ -4,7 +4,7 @@ Automated secure static web UI deployment
 ###  first build the  test template
 aws --region us-east-1 cloudformation package \
     --template-file templates/acm-certificate-test.yaml \
-    --s3-bucket cf-static-secure-site-ptr \
+    --s3-bucket cf-static-secure-site-promodeagro \
     --output-template-file packaged.template
 
 ### verify , deploy and test
@@ -14,8 +14,9 @@ aws --region us-east-1 cloudformation deploy \
     --stack-name certificate-test \
     --template-file  packaged.template \
     --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
-    --parameter-overrides  DomainName=synectiks.net SubDomain=appkubesim CreateApex=no HostedZoneId=ZY8RNBR15YWYU \
-    AppkubeDepartment=ops AppkubeProduct=appkube AppkubeEnvironment=prod AppkubeService=ui
+    --parameter-overrides  DomainName=promodeagro.com.com SubDomain="" CreateApex=yes \
+    HostedZoneId=Z00062013820EO6BYULDB \
+    AppkubeDepartment=promodeagro AppkubeProduct=website AppkubeEnvironment=prod AppkubeService=ui
 
 ## To test custom resource stack 
 ###  first build the  test template
