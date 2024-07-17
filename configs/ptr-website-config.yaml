@@ -12,7 +12,7 @@ general:
   domain: ptrtechnology.com
   subdomain: 
   hostedzoneid: Z06401662L0WAGUZJFQOF
-  onlyupdate: false
+  onlyupdate: true
   purestaticpages: false
   apexdomain: yes
 

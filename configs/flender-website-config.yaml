@@ -1,18 +1,18 @@
 apptags:
-  department: bongobasi
-  product: website
+  department: ptrtechnology
+  product: flenderdemo
   environment: prod
   service: ui
 git:
   repo: https://github.com/ptrsoft/flender-demo.git
   tag:  main
 general:
-  organization: promodeagro
+  organization: ptr
   rebuild-stack: false
-  domain: bongobasi.com
-  subdomain: 
-  hostedzoneid: Z06226113951R8W1TLGZ0
+  domain: ptrtechnology.com
+  subdomain: flender
+  hostedzoneid: Z06401662L0WAGUZJFQOF
   onlyupdate: false
   purestaticpages: false
-  apexdomain: yes
+  apexdomain: no
 

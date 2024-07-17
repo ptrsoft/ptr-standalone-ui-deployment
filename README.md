@@ -42,7 +42,7 @@ This stack is highly dependent on certificate and custom resource stack , so its
 
 ###  first build the  test template
 aws --region us-east-1 cloudformation package \
-    --template-file templates/route53-update.yaml \
+    --template-file templates/route53-update-test.yaml \
     --s3-bucket cf-static-secure-site-ptr \
     --output-template-file packaged.template
 ### verify , deploy and test

@@ -23,36 +23,34 @@ Conditions:
     - !Ref CreateApex
     - 'yes'
   
-  NonApex: !Not [!Equals [!Ref CreateApex, yes]]
-
 Resources:  
   Route53RecordSetGroup:
-    Condition: NonApex
     Type: AWS::Route53::RecordSetGroup
     Properties:
       Comment: Adding Record in domain
       HostedZoneId: !Ref 'HostedZoneId'
       RecordSets:
-      - Name: !Sub '${SubDomain}.${DomainName}'
+      - Name: !If [CreateApexConfig, !Sub '${DomainName}', !Sub '${SubDomain}.${DomainName}']
         Type: 'A'
         AliasTarget:
         # This zoneid is amazon specified, hardcode it
           HostedZoneId: Z2FDTNDATAQYW2
           DNSName: !Ref 'CDNDomain'
 
-ApexRoute53RecordSetGroup:
-    Condition: CreateApexConfig
-    Type: AWS::Route53::RecordSetGroup
-    Properties:
-      Comment: Adding Record in domain
-      HostedZoneId: !Ref 'HostedZoneId'
-      RecordSets:
-      - Name: !Sub '${DomainName}'
-        Type: 'A'
-        AliasTarget:
-        # This zoneid is amazon specified, hardcode it
-          HostedZoneId: Z2FDTNDATAQYW2
-          DNSName: !Ref 'CDNDomain'
+  WWWRoute53RecordSetGroup:
+      Condition: CreateApexConfig
+      DependsOn: Route53RecordSetGroup
+      Type: AWS::Route53::RecordSetGroup
+      Properties:
+        Comment: Adding Record in domain
+        HostedZoneId: !Ref 'HostedZoneId'
+        RecordSets:
+        - Name: !Sub 'www.${DomainName}'
+          Type: 'A'
+          AliasTarget:
+          # This zoneid is amazon specified, hardcode it
+            HostedZoneId: !Ref 'HostedZoneId'
+            DNSName: !Sub '${DomainName}'
 
 Outputs:
   Website:

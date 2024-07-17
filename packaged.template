@@ -51,11 +51,17 @@ Parameters:
     Type: String
   AppkubeService:
     Type: String
+Conditions:
+  Route53Domain:
+    Fn::Not:
+    - Fn::Equals:
+      - Ref: HostedZoneId
+      - ''
 Resources:
   CustomResourceStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-ptr/21e86c6332ca83fe9330429dee665eac.template
+      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-promodeagro/aa45a943d684803e0b5b9dd570a47451.template
       Tags:
       - Key: Solution
         Value: ACFS3
@@ -83,7 +89,7 @@ Resources:
   AcmCertificateStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-ptr/61198ec2a1c9ebcbe5cea1959b7fcaff.template
+      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-promodeagro/61198ec2a1c9ebcbe5cea1959b7fcaff.template
       Parameters:
         SubDomain:
           Ref: SubDomain
@@ -111,7 +117,7 @@ Resources:
   CloudFrontStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-ptr/aebb16d2302695ff1fa1266a5bfee44e.template
+      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-promodeagro/39fb6fbded55b9e81ca2a78a767e5809.template
       Parameters:
         CertificateArn:
           Fn::GetAtt:
@@ -145,6 +151,39 @@ Resources:
           Fn::GetAtt:
           - CustomResourceStack
           - Outputs.S3BucketLogsName
+      Tags:
+      - Key: Solution
+        Value: ACFS3
+      - Key: AppkubeDepartment
+        Value:
+          Ref: AppkubeDepartment
+      - Key: AppkubeProduct
+        Value:
+          Ref: AppkubeProduct
+      - Key: AppkubeEnvironment
+        Value:
+          Ref: AppkubeEnvironment
+      - Key: AppkubeService
+        Value:
+          Ref: AppkubeService
+  Route53Stack:
+    Condition: Route53Domain
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.us-east-1.amazonaws.com/cf-static-secure-site-promodeagro/1ac42a82b757d570cbbcc3dd0a2f645a.template
+      Parameters:
+        DomainName:
+          Ref: DomainName
+        SubDomain:
+          Ref: SubDomain
+        CreateApex:
+          Ref: CreateApex
+        HostedZoneId:
+          Ref: HostedZoneId
+        CDNDomain:
+          Fn::GetAtt:
+          - CloudFrontStack
+          - Outputs.CloudFrontDomainName
       Tags:
       - Key: Solution
         Value: ACFS3
@@ -215,3 +254,9 @@ Outputs:
       Fn::GetAtt:
       - CloudFrontStack
       - Outputs.CloudFrontDomainName
+  Website:
+    Description: Website address
+    Value:
+      Fn::GetAtt:
+      - Route53Stack
+      - Outputs.Website

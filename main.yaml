@@ -61,6 +61,9 @@ Parameters:
   AppkubeService:
     Type: String
 
+Conditions:
+  Route53Domain:  !Not [ !Equals [ !Ref HostedZoneId, "" ] ]
+
 Resources:
   CustomResourceStack:
     Type: AWS::CloudFormation::Stack
@@ -131,28 +134,29 @@ Resources:
         - Key: AppkubeService
           Value: !Ref AppkubeService
 
-  # Route53Stack:
-  #   Type: AWS::CloudFormation::Stack
-  #   Properties:
-  #     TemplateURL: templates/route53-update.yaml
-  #     # DisableRollback: true
-  #     Parameters:
-  #       DomainName: !Ref DomainName
-  #       SubDomain: !Ref SubDomain
-  #       CreateApex: !Ref CreateApex
-  #       HostedZoneId: !Ref HostedZoneId
-  #       CDNDomain: !GetAtt CloudFrontStack.Outputs.CloudFrontDomainName
-  #     Tags:
-  #       - Key: Solution
-  #         Value: ACFS3
-  #       - Key: AppkubeDepartment
-  #         Value: !Ref AppkubeDepartment
-  #       - Key: AppkubeProduct
-  #         Value: !Ref AppkubeProduct
-  #       - Key: AppkubeEnvironment
-  #         Value: !Ref AppkubeEnvironment
-  #       - Key: AppkubeService
-  #         Value: !Ref AppkubeService
+  Route53Stack:
+    Condition: Route53Domain
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: templates/route53-update.yaml
+      # DisableRollback: true
+      Parameters:
+        DomainName: !Ref DomainName
+        SubDomain: !Ref SubDomain
+        CreateApex: !Ref CreateApex
+        HostedZoneId: !Ref HostedZoneId
+        CDNDomain: !GetAtt CloudFrontStack.Outputs.CloudFrontDomainName
+      Tags:
+        - Key: Solution
+          Value: ACFS3
+        - Key: AppkubeDepartment
+          Value: !Ref AppkubeDepartment
+        - Key: AppkubeProduct
+          Value: !Ref AppkubeProduct
+        - Key: AppkubeEnvironment
+          Value: !Ref AppkubeEnvironment
+        - Key: AppkubeService
+          Value: !Ref AppkubeService
 
 Outputs:
   SolutionVersion:
@@ -181,6 +185,6 @@ Outputs:
   CloudFrontDomainName:
     Description: Website address
     Value: !GetAtt CloudFrontStack.Outputs.CloudFrontDomainName
-  # Website:
-  #   Description: Website address
-  #   Value: !GetAtt Route53Stack.Outputs.Website
+  Website:
+    Description: Website address
+    Value: !GetAtt Route53Stack.Outputs.Website

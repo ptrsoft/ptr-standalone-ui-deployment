@@ -1,17 +1,17 @@
 apptags:
-  department: bongobasi
-  product: website
+  department: ptrtechnology
+  product: papumewebsite
   environment: prod
   service: ui
 git:
   repo: https://github.com/ptrsoft/flender-demo.git
   tag:  main
 general:
-  organization: promodeagro
+  organization: ptr
   rebuild-stack: false
-  domain: bongobasi.com
+  domain: papu.me
   subdomain: 
-  hostedzoneid: Z06226113951R8W1TLGZ0
+  hostedzoneid:
   onlyupdate: false
   purestaticpages: false
   apexdomain: yes
