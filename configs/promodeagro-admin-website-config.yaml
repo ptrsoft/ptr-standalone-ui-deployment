@@ -1,0 +1,17 @@
+apptags:
+  department: promodeagro
+  product: admin
+  environment: prod
+  service: ui
+git:
+  repo: https://github.com/promodeagro/promodeagro-ecommerce-admin.git
+  tag:  main
+general:
+  organization: promodeagro
+  rebuild-stack: false
+  domain: promodeagro.com
+  subdomain: admin
+  hostedzoneid: Z00062013820EO6BYULDB
+  onlyupdate: true
+  purestaticpages: false
+  apexdomain: no

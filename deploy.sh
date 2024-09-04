@@ -52,6 +52,11 @@ subdomain=""
 hostedzoneid=""
 purehtmlcsspages=""
 IsApexDomain=""
+
+declare -A awsprofiles
+awsprofiles[promodeagro]="promode"
+awsprofiles[ptrtechnology]="ptr"
+
 ## parse the arguments 
 while true; do
     case "$1" in
@@ -98,10 +103,12 @@ else
 fi
 
 buildui() {
-    echo "using configs from config file"
+    echo "deleting existing checkout folder"
     clean-checkout-folder 2>/dev/null>&1
+    echo "cloning the source to checkout folder"
     git clone "$1" checkout
-    pushd checkout && npm install && npm run build && pushd +1
+    echo "Starting to build the source code"
+    pushd checkout && npm install -f && npm run build && pushd +1
 }
 
 checkout() {
@@ -247,6 +254,12 @@ deploy-with-cloudformation-script() {
  
     echo "starting the main cloudformation script deployment"
 
+    awsprofile=$(eval getAwsProfile "$organization")
+    echo "Obtained awsprofile $awsprofile"   
+    export AWS_CONFIG_FILE=/tekton/home/.aws/config
+    export AWS_SHARED_CREDENTIALS_FILE=/tekton/home/.aws/credentials
+    export AWS_PROFILE=$awsprofile
+
     aws --region us-east-1 cloudformation deploy \
         --stack-name "$1" \
         --template-file  packaged.template \
@@ -256,15 +269,26 @@ deploy-with-cloudformation-script() {
         AppkubeService="$AppkubeService" CreateApex="$IsApexDomain"
 }
 
+getAwsProfile() {
+    echo "${awsprofiles[$1]}"
+}
 updates3andrefreshcdn() {
-    echo "Getting root bucket"
+    echo "Getting root bucket from the stack "$1""
 
     S3BucketRoot=$(aws cloudformation describe-stacks --stack-name "$1" \
     --query 'Stacks[0].Outputs[?OutputKey==`S3BucketRoot`].OutputValue' \
     --output text 2>/dev/null>&1)
 
     iferror "could not fetch root bucket"
+    
+    echo "Root bucket is : "$S3BucketRoot" "
 
+    echo "Synching root bucket"
+
+    aws s3 sync www s3://"$S3BucketRoot" --delete >/dev/null 2>&1
+    
+    iferror "could not sync root bucket"
+    
     echo "Getting CloudFront Distribution Id"
 
     CFDistributionId=$(aws cloudformation describe-stacks --stack-name "$1" \
@@ -273,19 +297,20 @@ updates3andrefreshcdn() {
 
     iferror "could not fetch cloud front ditribution id"
 
-    echo "Synching root bucket"
-
-    aws s3 sync www s3://"$S3BucketRoot" --delete >/dev/null 2>&1
-    
-    iferror "could not sync root bucket"
+    echo "Got Cloudfront Distribution id : '$CFDistributionId' "
 
     echo "Doing cloudfront invalidatation"
     
-    invalidation_output=$(aws cloudfront create-invalidation --distribution-id "$CFDistributionId" --paths "/*" >/dev/null 2>&1)
+    invalidation_output=$(aws cloudfront create-invalidation --distribution-id "$CFDistributionId" --paths "/*")
+
+    # echo "invalidation output is: '$invalidation_output' "
+
     invalidation_id=$(echo "$invalidation_output" | grep -oP '(?<="Id": ")[^"]*' | cut -d'"' -f1)
 
+    echo "invalidation id  is '$invalidation_id' "
+
     echo "Waiting for invalidatation"      
-    aws cloudfront wait invalidation-completed --distribution-id "$CFDistributionId" --id "$invalidation_id" >/dev/null 2>&1
+    aws cloudfront wait invalidation-completed --distribution-id "$CFDistributionId" --id "$invalidation_id" --debug true >/dev/null 2>&1
     echo "Invalidation completed, Invalidation ID: $invalidation_id"
 }
 updatecmdb() {
@@ -343,3 +368,6 @@ else
     updates3andrefreshcdn "$STACK_NAME"
 fi
 updatecmdb "$STACK_NAME"
+
+
+

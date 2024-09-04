@@ -1,0 +1,17 @@
+apptags:
+  department: promodeagro
+  product: inventory
+  environment: prod
+  service: ui
+git:
+  repo: https://github.com/ptrsoft/catalogue-inventory-ui.git
+  tag:  main
+general:
+  organization: promodeagro
+  rebuild-stack: false
+  domain: promodeagro.com
+  subdomain: inventory
+  hostedzoneid: Z00062013820EO6BYULDB
+  onlyupdate: true
+  purestaticpages: false
+  apexdomain: no

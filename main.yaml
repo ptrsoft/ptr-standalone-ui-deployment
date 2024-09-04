@@ -188,3 +188,4 @@ Outputs:
   Website:
     Description: Website address
     Value: !GetAtt Route53Stack.Outputs.Website
+    Condition: Route53Domain
