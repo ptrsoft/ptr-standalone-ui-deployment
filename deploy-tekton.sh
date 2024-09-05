@@ -122,11 +122,11 @@ copy-ui-build-in-www() {
         cp -r checkout/* www/
     else
         echo "copying build folder contents from build to www"
-        cp -r "$(workspaces.shared-data.path)"/checkout/build/* www/
+        cp -r checkout/build/* www/
     fi
-    cp -r "$(workspaces.shared-data.path)"/error-pages/* www/
+    cp -r checkout/error-pages/* www/
     echo "www folder contents after build"
-    ls -a "$(workspaces.shared-data.path)"/www/
+    ls -a www/
 }
 
 ## clean the checkout folder
@@ -373,7 +373,7 @@ deployUI() {
     if  isonlyupdate; then
         ls -a
         clean-www-folder
-        # copy-ui-build-in-www
+        copy-ui-build-in-www
         updates3andrefreshcdn "$STACK_NAME"
     else 
         clean-www-folder
@@ -412,8 +412,7 @@ echo "stack name formed is : $STACK_NAME "
 ## cleaning stack beforehand if requested by user , because UI build takes more time and user simply complete UI build and then fail
 
 create-www-folder-if-not-exist
-echo "showing folder contents"
-
+echo "showing folder contents when program start"
 ls -a
 
 if rebuild-stack;then
