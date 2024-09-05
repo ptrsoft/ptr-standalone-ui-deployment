@@ -213,10 +213,42 @@ delete-stack() {
     iferror "Delete Stack Api faile for some unknown reason"
 }
 
+# # Function to check the stack status
+# check_stack_status() {
+#     aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query 'Stacks[0].StackStatus' --output text 2>/dev/null
+# }
+
 # Function to check the stack status
 check_stack_status() {
-    aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query 'Stacks[0].StackStatus' --output text 2>/dev/null
+    aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query 'Stacks[0].StackStatus' --output text 
 }
+
+# Function that check delete status and wait upto creation
+keep-waiting-until-stack-created(){
+    # Polling interval in seconds
+    INTERVAL=30
+    echo "Waiting for CloudFormation stack '$1' to be created..."
+    # Initial status check
+    STATUS=$(check_stack_status)
+
+    echo "Checking status for stack: $1"
+    echo "Current status: $STATUS"
+
+    # Loop until the stack reaches a completion status
+    while [[ "$STATUS" != "CREATE_COMPLETE" && "$STATUS" != "UPDATE_COMPLETE" && "$STATUS" != "ROLLBACK_COMPLETE" && "$STATUS" != "UPDATE_ROLLBACK_COMPLETE" && "$STATUS" != "CREATE_FAILED" && "$STATUS" != "DELETE_COMPLETE" ]]; do
+        echo "Stack is in $STATUS status. Waiting for $INTERVAL seconds..."
+        sleep $INTERVAL
+        STATUS=$(check_stack_status)
+    done
+    echo "Final stack status: $STATUS"
+    # Check if stack creation or update was successful
+    if [[ "$STATUS" == "CREATE_COMPLETE" || "$STATUS" == "UPDATE_COMPLETE" ]]; then
+        echo "Stack operation was successful."
+    else
+        echo "Stack operation failed or was rolled back."
+    fi
+}
+
 # Function that check delete status and wait upto deletion
 keep-waiting-until-stack-deleted(){
     echo "Waiting for CloudFormation stack '$1' to be deleted..."
@@ -365,6 +397,7 @@ else
     build-cloudformation-script-package
     deploy-with-cloudformation-script "$STACK_NAME"
     ## sometime CF script dont copt the www contents , so added extra steps
+    keep-waiting-until-stack-created "$STACK_NAME"
     updates3andrefreshcdn "$STACK_NAME"
 fi
 updatecmdb "$STACK_NAME"
