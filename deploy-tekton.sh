@@ -144,6 +144,7 @@ clean-checkout-folder() {
 }
 
 check-existing-stack() {
+    setawsenv
     aws cloudformation list-stacks --no-paginate --output json --stack-status-filter "CREATE_COMPLETE" "UPDATE_COMPLETE" "ROLLBACK_COMPLETE" "ROLLBACK_FAILED" "DELETE_FAILED" --query 'StackSummaries[*].StackName' | grep $1 > /dev/null
     if [ $? -eq 0 ]; then
         true
@@ -155,6 +156,7 @@ check-existing-stack() {
 # Function to clean the existing buckets , this deleteion is required to cleanly delete the stack
 
 clean-existing-buckets() {
+    setawsenv
     echo "cleaning the root and log bucket of the stack"
     S3BucketRoot=$(aws cloudformation describe-stacks --stack-name "$1" --query 'Stacks[0].Outputs[?OutputKey==`S3BucketRoot`].OutputValue' --output text)
     S3BucketLogs=$(aws cloudformation describe-stacks --stack-name "$1" --query 'Stacks[0].Outputs[?OutputKey==`S3BucketLogs`].OutputValue' --output text)
@@ -169,6 +171,7 @@ clean-existing-buckets() {
 delete-existing-stack-if-user-requests() {
         # existing=$(check-existing-stack $1)
         # echo "existing variable value : $existing "
+        setawsenv
         echo "entering existing stack delete section"
         if check-existing-stack "$1"; then
             echo "stack exist with the name: "$1""
@@ -291,13 +294,13 @@ build-cloudformation-script-package() {
 }
 
 deploy-with-cloudformation-script() {
+    setawsenv
     aws cloudformation validate-template --template-body file://packaged.template >/dev/null 2>&1
 
     iferror "template validation failed"
  
     echo "starting the main cloudformation script deployment"
     
-    setawsenv
     aws --region us-east-1 cloudformation deploy \
         --stack-name "$1" \
         --template-file  packaged.template \
@@ -358,6 +361,11 @@ updatecmdb() {
     aws cloudformation describe-stacks --stack-name "$1" --query 'Stacks[0].Outputs[].[OutputKey,OutputValue]' --output table 
 }
 
+create-www-folder-if-not-exist(){
+    mkdir -p www
+    iferror "could not create www folder"
+}
+
 iferror() {
     if [ $? -ne 0 ]; then
         echo "$1"
@@ -379,6 +387,8 @@ STACK_NAME="$AppkubeDepartment-$AppkubeProduct-$AppkubeEnvironment-$AppkubeServi
 echo "stack name formed is : $STACK_NAME "
 ## cleaning stack beforehand if requested by user , because UI build takes more time and user simply complete UI build and then fail
 delete-existing-stack-if-user-requests "$STACK_NAME"
+
+create-www-folder-if-not-exist
 
 if  isonlyupdate; then 
     echo "doing onlyupdate"
