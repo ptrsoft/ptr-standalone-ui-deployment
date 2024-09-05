@@ -167,20 +167,18 @@ clean-existing-buckets() {
     aws s3 rb s3://"$S3BucketRoot" --force
     aws s3 rb s3://"$S3BucketLogs" --force
 }
+
 # function to delete the existing stack if user requests so
-delete-existing-stack-if-user-requests() {
+delete-existing-stack() {
         # existing=$(check-existing-stack $1)
         # echo "existing variable value : $existing "
-        setawsenv
         echo "entering existing stack delete section"
         if check-existing-stack "$1"; then
             echo "stack exist with the name: "$1""
-            if rebuild-stack; then
-                echo "deleting the stack"
-                clean-existing-buckets "$1" 
-                delete-stack "$1"
-                keep-waiting-until-stack-deleted "$1"
-            fi
+            echo "deleting the stack"
+            clean-existing-buckets "$1" 
+            delete-stack "$1"
+            keep-waiting-until-stack-deleted "$1"
         else
             echo "stack does not exist with the name: $1"
         fi
@@ -385,8 +383,12 @@ echo "Remaining arguments: $@"
 
 STACK_NAME="$AppkubeDepartment-$AppkubeProduct-$AppkubeEnvironment-$AppkubeService"
 echo "stack name formed is : $STACK_NAME "
+
 ## cleaning stack beforehand if requested by user , because UI build takes more time and user simply complete UI build and then fail
-delete-existing-stack-if-user-requests "$STACK_NAME"
+
+if rebuild-stack;then
+    delete-existing-stack "$STACK_NAME"
+fi
 
 create-www-folder-if-not-exist
 
