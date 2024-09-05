@@ -130,11 +130,11 @@ copy-ui-build-in-www() {
         cp -r checkout/* www/
     else
         echo "copying build folder contents from build to www"
-        cp -r checkout/build/* www/
+        cp -r "$(workspaces.shared-data.path)"/checkout/build/* www/
     fi
-    cp -r error-pages/* www/
+    cp -r "$(workspaces.shared-data.path)"/error-pages/* www/
     echo "www folder contents after build"
-    ls -a www/
+    ls -a "$(workspaces.shared-data.path)"/www/
 }
 
 ## clean the checkout folder
