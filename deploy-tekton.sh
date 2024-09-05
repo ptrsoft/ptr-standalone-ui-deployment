@@ -102,15 +102,6 @@ else
     AppkubeService=$(echo "${app_tags}" | awk -F ':' '{print $4}')
 fi
 
-buildui() {
-    echo "deleting existing checkout folder"
-    clean-checkout-folder 2>/dev/null>&1
-    echo "cloning the source to checkout folder"
-    git clone "$1" checkout
-    echo "Starting to build the source code"
-    pushd checkout && npm install -f && npm run build && pushd +1
-}
-
 checkout() {
     echo "using configs from config file"
     echo "cleaning existing checkout folder"
@@ -119,8 +110,9 @@ checkout() {
     git clone "$1" checkout
 }
 
-
 clean-www-folder() {
+    ls -a
+    ls -a www/
     rm -rf www/* 
 }
 ## copy the build outcome folder contents in www folder
@@ -371,6 +363,39 @@ iferror() {
     fi
 }
 
+deployUI() {
+    echo "Starting to build the UI"
+    if ! (ispurehtmlcsspages);then
+        buildui $1
+    else 
+        checkout $1
+    fi
+    if  isonlyupdate; then
+        create-www-folder-if-not-exist
+        ls -a
+        clean-www-folder
+        # copy-ui-build-in-www
+        updates3andrefreshcdn "$STACK_NAME"
+    else 
+        clean-www-folder
+        copy-ui-build-in-www
+        build-cloudformation-script-package
+        deploy-with-cloudformation-script "$STACK_NAME"
+        keep-waiting-until-stack-created "$STACK_NAME"
+        ## sometime CF script dont copt the www contents , so added extra steps
+        updates3andrefreshcdn "$STACK_NAME"
+    fi
+}
+buildui() {
+    echo "deleting existing checkout folder"
+    clean-checkout-folder 2>/dev/null>&1
+    echo "cloning the source to checkout folder"
+    git clone "$1" checkout
+    echo "Starting to build the source code"
+    pushd checkout && npm install -f && npm run build && pushd +1
+}
+
+
 echo "configfile: $configfile"
 echo "repo getting deployed: $repo"
 echo "git tag : $git_tag"
@@ -390,34 +415,8 @@ if rebuild-stack;then
     delete-existing-stack "$STACK_NAME"
 fi
 
-create-www-folder-if-not-exist
-
-if  isonlyupdate; then 
-    echo "doing onlyupdate"
-    if ! (ispurehtmlcsspages);then
-        buildui "$repo"
-    else 
-        checkout "$repo"
-    fi
-    clean-www-folder
-    copy-ui-build-in-www
-    clean-checkout-folder
-    updates3andrefreshcdn "$STACK_NAME"
-else 
-    if ! (ispurehtmlcsspages);then
-        echo "doing complete ui build"
-        buildui "$repo"
-    else 
-        echo "doing only checkout of repo"
-        checkout "$repo"
-    fi
-    clean-www-folder
-    copy-ui-build-in-www
-    clean-checkout-folder
-    build-cloudformation-script-package
-    deploy-with-cloudformation-script "$STACK_NAME"
-    ## sometime CF script dont copt the www contents , so added extra steps
-    keep-waiting-until-stack-created "$STACK_NAME"
-    updates3andrefreshcdn "$STACK_NAME"
-fi
+deployUI "$repo" "$AppkubeDepartment" "$AppkubeProduct" "$AppkubeService"  
+clean-checkout-folder
 updatecmdb "$STACK_NAME"
+
+
