@@ -371,7 +371,6 @@ deployUI() {
         checkout $1
     fi
     if  isonlyupdate; then
-        create-www-folder-if-not-exist
         ls -a
         clean-www-folder
         # copy-ui-build-in-www
@@ -386,13 +385,14 @@ deployUI() {
         updates3andrefreshcdn "$STACK_NAME"
     fi
 }
+
 buildui() {
-    echo "deleting existing checkout folder"
-    clean-checkout-folder 2>/dev/null>&1
     echo "cloning the source to checkout folder"
     git clone "$1" checkout
     echo "Starting to build the source code"
     pushd checkout && npm install -f && npm run build && pushd +1
+    echo "showing folder contents"
+    ls -a
 }
 
 
@@ -410,6 +410,11 @@ STACK_NAME="$AppkubeDepartment-$AppkubeProduct-$AppkubeEnvironment-$AppkubeServi
 echo "stack name formed is : $STACK_NAME "
 
 ## cleaning stack beforehand if requested by user , because UI build takes more time and user simply complete UI build and then fail
+
+create-www-folder-if-not-exist
+echo "showing folder contents"
+
+ls -a
 
 if rebuild-stack;then
     delete-existing-stack "$STACK_NAME"
