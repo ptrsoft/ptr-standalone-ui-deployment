@@ -206,9 +206,19 @@ ispurehtmlcsspages() {
     false
 fi
 }
+## setting aws env
+setawsenv() {
+    awsprofile=$(eval getAwsProfile "$organization")
+    echo "Obtained awsprofile $awsprofile"   
+    export AWS_CONFIG_FILE=/tekton/home/.aws/config
+    export AWS_SHARED_CREDENTIALS_FILE=/tekton/home/.aws/credentials
+    export AWS_PROFILE=$awsprofile
+}
+
 
 # Function to delete the stack
 delete-stack() {
+    setawsenv
     aws cloudformation delete-stack --stack-name $1 --output text 2>/dev/null
     iferror "Delete Stack Api faile for some unknown reason"
 }
@@ -220,6 +230,7 @@ delete-stack() {
 
 # Function to check the stack status
 check_stack_status() {
+    setawsenv
     aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query 'Stacks[0].StackStatus' --output text 
 }
 
@@ -285,13 +296,8 @@ deploy-with-cloudformation-script() {
     iferror "template validation failed"
  
     echo "starting the main cloudformation script deployment"
-
-    awsprofile=$(eval getAwsProfile "$organization")
-    echo "Obtained awsprofile $awsprofile"   
-    export AWS_CONFIG_FILE=/tekton/home/.aws/config
-    export AWS_SHARED_CREDENTIALS_FILE=/tekton/home/.aws/credentials
-    export AWS_PROFILE=$awsprofile
-
+    
+    setawsenv
     aws --region us-east-1 cloudformation deploy \
         --stack-name "$1" \
         --template-file  packaged.template \
@@ -305,6 +311,7 @@ getAwsProfile() {
     echo "${awsprofiles[$1]}"
 }
 updates3andrefreshcdn() {
+    setawsenv
     echo "Getting root bucket from the stack "$1""
 
     S3BucketRoot=$(aws cloudformation describe-stacks --stack-name "$1" \
@@ -346,6 +353,7 @@ updates3andrefreshcdn() {
     echo "Invalidation completed, Invalidation ID: $invalidation_id"
 }
 updatecmdb() {
+    setawsenv    
     aws cloudformation describe-stacks --stack-name "$1" --query 'Stacks[0].Outputs[].[OutputKey,OutputValue]' --output json > output.json
     aws cloudformation describe-stacks --stack-name "$1" --query 'Stacks[0].Outputs[].[OutputKey,OutputValue]' --output table 
 }
