@@ -111,8 +111,6 @@ checkout() {
 }
 
 clean-www-folder() {
-    ls -a
-    ls -a www/
     rm -rf www/* 
 }
 ## copy the build outcome folder contents in www folder
@@ -125,8 +123,8 @@ copy-ui-build-in-www() {
         cp -r checkout/build/* www/
     fi
     cp -r checkout/error-pages/* www/
-    echo "www folder contents after build"
-    ls -a www/
+    # echo "www folder contents after build"
+    # ls -a www/
 }
 
 ## clean the checkout folder
@@ -371,7 +369,6 @@ deployUI() {
         checkout $1
     fi
     if  isonlyupdate; then
-        ls -a
         clean-www-folder
         copy-ui-build-in-www
         updates3andrefreshcdn "$STACK_NAME"
@@ -391,8 +388,8 @@ buildui() {
     git clone "$1" checkout
     echo "Starting to build the source code"
     pushd checkout && npm install -f && npm run build && pushd +1
-    echo "showing folder contents"
-    ls -a
+    # echo "showing folder contents"
+    # ls -a
 }
 
 
@@ -412,13 +409,12 @@ echo "stack name formed is : $STACK_NAME "
 ## cleaning stack beforehand if requested by user , because UI build takes more time and user simply complete UI build and then fail
 
 create-www-folder-if-not-exist
-echo "showing folder contents when program start"
-ls -a
+# echo "showing folder contents when program start"
+# ls -a
 
 if rebuild-stack;then
     delete-existing-stack "$STACK_NAME"
 fi
-
 deployUI "$repo" "$AppkubeDepartment" "$AppkubeProduct" "$AppkubeService"  
 clean-checkout-folder
 updatecmdb "$STACK_NAME"
