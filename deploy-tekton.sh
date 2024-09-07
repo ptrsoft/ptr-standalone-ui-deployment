@@ -337,7 +337,7 @@ updates3andrefreshcdn() {
 
     # echo "invalidation output is: '$invalidation_output' "
 
-    invalidation_id=$(echo "$invalidation_output" | grep -oE '(?<="Id": ")[^"]*' | cut -d'"' -f1)
+    invalidation_id=$(echo "$invalidation_output" | grep -oP '(?<="Id": ")[^"]*' | cut -d'"' -f1)
 
     echo "invalidation id  is '$invalidation_id' "
 
