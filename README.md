@@ -1,3 +1,71 @@
+<!-- TOC -->
+
+- [Introduction](#introduction)
+- [What it does?](#what-it-does)
+- [Architecture](#architecture)
+- [How to use it](#how-to-use-it)
+- [How to use it in tekton pipeline](#how-to-use-it-in-tekton-pipeline)
+- [webui-deployment](#webui-deployment)
+    - [To test certificate stack](#to-test-certificate-stack)
+        - [first build the  test template](#first-build-the--test-template)
+        - [verify , deploy and test](#verify--deploy-and-test)
+    - [To test custom resource stack](#to-test-custom-resource-stack)
+        - [first build the  test template](#first-build-the--test-template)
+        - [verify , deploy and test](#verify--deploy-and-test)
+    - [To test cloudfront stack](#to-test-cloudfront-stack)
+    - [To test the route53 stack](#to-test-the-route53-stack)
+        - [first build the  test template](#first-build-the--test-template)
+        - [verify , deploy and test](#verify--deploy-and-test)
+    - [How to do the complete stack test](#how-to-do-the-complete-stack-test)
+        - [first build the  Main template](#first-build-the--main-template)
+        - [verify , deploy and test](#verify--deploy-and-test)
+        - [Pipeline implementation](#pipeline-implementation)
+    - [Manually Cleaup the stack](#manually-cleaup-the-stack)
+    - [deploying any UI with this scripted automation](#deploying-any-ui-with-this-scripted-automation)
+
+<!-- /TOC -->
+# Introduction 
+
+Use this atomated solution to deploy any full fledge front end(static site / SPA / PWA complete Website etc) in AWS. In the solution we just specify a config file with all data pertaining to the Organization / Department /  Account (Landing Zone) ... etc and it will create the entire stack with AWS cloudformation.We use Tekton as our CI/CD platform , so I also write some tekton jobs so that the sites can be deployed via tekton. The automation script take care of self discovery of the stack after deployment and we can query the AWS cloudformation stack and get every metadata about the stack you create and you could use that data for any stack that act as a cloud control plane.
+
+# What it does?
+
+-   It create secure S3 storage & all rules etc for hosting
+-   The Build Website content is pushed to S3
+-   The Secure certificate etc is created for the Site
+-   Then it creates the CDN layer with the certificate.
+-   It applies CloudFront Response Header Policies to add security headers to every server response
+-   Then it update the CDN endpoint with route 53 domain for public access
+-   Then it can create a soft waf layer to protect the site.
+
+# Architecture 
+
+![alt text](image.png)
+
+# How to use it
+
+We have made this script a generic to deploy any UI , given the UI repo location. To deploy the UI, you need to pass on the deployment config to a config.yaml. A example config.yaml is given.
+To deploy
+./depoly.sh -c config.yaml.
+
+For example , for ptr website deployment , we added ptr-website-config.yaml.
+To deploy the ptr-website , all u need to do is
+
+./depoly.sh -c ptr-website-config.yaml.
+
+Note: We assume that you will configure the proper AWS context( either through role arn or access key / secret keys) before running the deploy.sh script.
+
+# How to use it in tekton pipeline 
+
+To deploy the UI repeatedly in tekton , please use the following tasks.
+
+https://raw.githubusercontent.com/ptrsoft/ptr-tekton-automation/refs/heads/main/tasks/ptr-standalone-ui.yaml
+
+For different Application UI deployment i Have writted few build pipelines as follows:
+
+https://raw.githubusercontent.com/ptrsoft/ptr-tekton-automation/refs/heads/main/pipelines/ecom-b2c-sui-deployment.yaml
+
+
 # webui-deployment
 Automated secure static web UI deployment
 ## To test certificate stack 

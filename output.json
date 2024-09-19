@@ -1,35 +1,35 @@
 [
     [
         "CFDistributionId",
-        "E3RCFOT0839BJ1"
+        "E3B3MK595KDFKW"
     ],
     [
         "S3BucketLogs",
-        "promodeagro-admin-prod-ui-log"
+        "promodeagro-inventory-prod-ui-log"
     ],
     [
         "S3BucketLogsName",
-        "promodeagro-admin-prod-ui-log.s3.amazonaws.com"
+        "promodeagro-inventory-prod-ui-log.s3.amazonaws.com"
     ],
     [
         "CopyFunction",
-        "arn:aws:lambda:us-east-1:851725323791:function:promodeagro-admin-prod-ui-CustomResou-CopyFunction-hNztPa7nKBWl"
+        "arn:aws:lambda:us-east-1:851725323791:function:promodeagro-inventory-prod-ui-CustomR-CopyFunction-iCoI8esBWksX"
     ],
     [
         "Website",
-        "admin.promodeagro.com"
+        "inventory.promodeagro.com"
     ],
     [
         "S3BucketRootName",
-        "promodeagro-admin-prod-ui-root.s3.amazonaws.com"
+        "promodeagro-inventory-prod-ui-root.s3.amazonaws.com"
     ],
     [
         "S3BucketRoot",
-        "promodeagro-admin-prod-ui-root"
+        "promodeagro-inventory-prod-ui-root"
     ],
     [
         "CloudFrontDomainName",
-        "d192wvuxh9fqig.cloudfront.net"
+        "d1j8k6669csfo2.cloudfront.net"
     ],
     [
         "SolutionVersion",
@@ -37,6 +37,6 @@
     ],
     [
         "CertificateArn",
-        "arn:aws:acm:us-east-1:851725323791:certificate/f485e6bb-7e35-420e-9954-ee72a5b616fa"
+        "arn:aws:acm:us-east-1:851725323791:certificate/9638ab34-1b83-40a0-ae73-4153b04b24e8"
     ]
 ]
