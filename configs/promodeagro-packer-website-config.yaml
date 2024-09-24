@@ -1,0 +1,17 @@
+apptags:
+  department: promodeagro
+  product: packer
+  environment: prod
+  service: ui
+git:
+  repo: https://github.com/promodeagro/promodeagro-ecom-packer-sui.git
+  tag:  main
+general:
+  organization: promodeagro
+  rebuild-stack: false
+  domain: promodeagro.com
+  subdomain: packer
+  hostedzoneid: Z00062013820EO6BYULDB
+  onlyupdate: true
+  purestaticpages: false
+  apexdomain: no
