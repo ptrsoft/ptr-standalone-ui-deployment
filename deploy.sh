@@ -267,7 +267,7 @@ keep-waiting-until-stack-deleted(){
     done
 }
 build-cloudformation-script-package() {
-    aws --region ap-south-1 cloudformation package \
+    aws --region us-east-1 cloudformation package \
     --template-file main.yaml \
     --s3-bucket cf-static-secure-site-"$organization" \
     --output-template-file packaged.template >/dev/null 2>&1
@@ -282,7 +282,7 @@ deploy-with-cloudformation-script() {
  
     echo "starting the main cloudformation script deployment"
     
-    aws --region ap-south-1 cloudformation deploy \
+    aws --region us-east-1 cloudformation deploy \
         --stack-name "$1" \
         --template-file  packaged.template \
         --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \

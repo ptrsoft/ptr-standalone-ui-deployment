@@ -4,7 +4,7 @@ apptags:
   environment: prod
   service: ui
 git:
-  repo: https://github.com/ptrsoft/papu-own-website.git
+  repo: https://github.com/ptrsoft/flender-demo.git
   tag:  main
 general:
   organization: ptr
