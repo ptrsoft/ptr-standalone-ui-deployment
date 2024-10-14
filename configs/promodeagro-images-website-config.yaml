@@ -12,7 +12,7 @@ general:
   domain: promodeagro.com
   subdomain: images
   hostedzoneid: Z00062013820EO6BYULDB
-  onlyupdate: false
+  onlyupdate: true
   purestaticpages: true
   apexdomain: no
 
