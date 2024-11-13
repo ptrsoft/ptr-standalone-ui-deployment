@@ -269,7 +269,7 @@ keep-waiting-until-stack-deleted(){
 build-cloudformation-script-package() {
     aws --region us-east-1 cloudformation package \
     --template-file main.yaml \
-    --s3-bucket cf-static-secure-site-ptr \
+    --s3-bucket cf-static-secure-site-promodeagro \
     --output-template-file packaged.template >/dev/null 2>&1
 
     iferror "Building cloudformation package failed"

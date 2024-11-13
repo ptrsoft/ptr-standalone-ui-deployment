@@ -1,0 +1,17 @@
+apptags:
+  department: promodeagro
+  product: rider
+  environment: prod
+  service: ui
+git:
+  repo: https://github.com/promodeagro/promodeagro-ecom-delivery-sui
+  tag:  main
+general:
+  organization: promodeagro
+  rebuild-stack: false
+  domain: promodeagro.com
+  subdomain: rider
+  hostedzoneid: Z00062013820EO6BYULDB
+  onlyupdate: true
+  purestaticpages: false
+  apexdomain: no
