@@ -121,6 +121,7 @@ clean-www-folder() {
 }
 ## copy the build outcome folder contents in www folder
 copy-ui-build-in-www() {
+    mkdir -p www 
     if ispurehtmlcsspages;then
         echo "copying root folder contents from checkout to www"
         cp -r checkout/* www/
