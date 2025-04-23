@@ -1,0 +1,12 @@
+version: 0.2
+phases:
+  install:
+    commands:
+      - echo "Installing dependencies"
+      - cp ./configs/$CONFIG_NAME ./active-config.yml  # Copy the selected config file to a standard location
+
+  build:
+    commands:
+      - echo "Deploying using config file: $CONFIG_NAME"
+      - chmod +x ./deploy.sh
+      - ./deploy.sh ./active-config.yml
