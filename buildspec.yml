@@ -10,4 +10,4 @@ phases:
     commands:
       - echo "Deploying using $CONFIG_NAME"
       - chmod +x ./deploy.sh
-      - ./deploy.sh -c ./active-config.yml
+      - ./deploy.sh -c active-config.yml
